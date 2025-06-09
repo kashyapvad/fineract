@@ -313,3 +313,29 @@ REFERENCES:
   - OPERATIONAL_DASHBOARD: System monitoring dashboards
   - INCIDENT_RESPONSE: Incident handling procedures
   - AUTOMATED_RECOVERY: Self-healing capabilities
+
+## External Service Integration Patterns [P0]
+
+### RULE: Provider Abstraction Architecture [P0]
+CONTEXT: Integrate with external services (APIs, payment processors, credit bureaus, etc.) through provider-agnostic architecture
+REQUIREMENT: Implement abstraction layer for external services to enable seamless provider switching without business logic changes
+FAIL IF:
+- Business logic directly coupled to specific provider implementations
+- Hardcoded provider-specific API calls in services
+- Missing provider interface abstraction
+- Provider-specific DTOs used in business logic
+- No provider factory pattern for selection/switching
+- Missing provider configuration validation
+- No provider-agnostic error handling
+VERIFICATION: Check external service integration architecture and provider abstraction patterns
+REFERENCES:
+  - PROVIDER_INTERFACE: Abstract interface for external service operations
+  - PROVIDER_FACTORY: Factory pattern for provider selection and management
+  - PROVIDER_DTO: Provider-agnostic request/response DTOs
+  - PROVIDER_CONFIG: Environment-based provider configuration with @ConditionalOnProperty
+  - STRING_NORMALIZATION: Proper string handling with trimming, case conversion for comparisons
+  - PROVIDER_EXCEPTION: Custom exception hierarchy for provider-specific errors
+EXAMPLES:
+  - Credit Bureau Providers: CreditBureauProvider interface with Decentro/Experian/Equifax implementations
+  - Payment Providers: PaymentProvider interface with Stripe/Razorpay/PayPal implementations
+  - SMS Providers: SmsProvider interface with Twilio/AWS SNS/Firebase implementations

@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <!-- Create m_extend_client_credit_score table for MySQL -->
+    <changeSet author="fineract" id="1" context="mysql">
+        <createTable tableName="m_extend_client_credit_score">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="credit_report_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Score Details -->
+            <column name="score_model" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="score_version" type="VARCHAR(20)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="score_name" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="credit_score" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="score_date" type="DATE">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Scoring Elements (factors that influenced the score) -->
+            <column name="scoring_elements" type="JSON">
+                <constraints nullable="true"/>
+            </column>
+            <column name="score_reason" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Score Metadata -->
+            <column name="score_range_min" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="score_range_max" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="score_percentile" type="DECIMAL(5,2)">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Provider Specific Data -->
+            <column name="provider_score_id" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="provider_metadata" type="JSON">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Audit fields -->
+            <column name="created_on_utc" type="DATETIME(6)" defaultValueComputed="CURRENT_TIMESTAMP(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_modified_on_utc" type="DATETIME(6)" defaultValueComputed="CURRENT_TIMESTAMP(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_by" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <!-- Add foreign key constraints -->
+        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
+                                 baseColumnNames="credit_report_id"
+                                 constraintName="FK_extend_credit_score_report"
+                                 referencedTableName="m_extend_client_credit_report"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
+                                 baseColumnNames="created_by"
+                                 constraintName="FK_extend_credit_score_created_by_user"
+                                 referencedTableName="m_appuser"
+                                 referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
+                                 baseColumnNames="last_modified_by"
+                                 constraintName="FK_extend_credit_score_modified_by_user"
+                                 referencedTableName="m_appuser"
+                                 referencedColumnNames="id"/>
+
+        <!-- Add performance indexes -->
+        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_report_id">
+            <column name="credit_report_id"/>
+        </createIndex>
+
+        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_model">
+            <column name="score_model"/>
+        </createIndex>
+
+        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_value">
+            <column name="credit_score"/>
+        </createIndex>
+
+        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_date">
+            <column name="score_date"/>
+        </createIndex>
+
+        <!-- Unique constraint to prevent duplicate scores for same model per report -->
+        <addUniqueConstraint tableName="m_extend_client_credit_score"
+                            columnNames="credit_report_id, score_model"
+                            constraintName="uk_extend_credit_score_report_model"/>
+    </changeSet>
+
+    <!-- Create m_extend_client_credit_score table for PostgreSQL -->
+    <changeSet author="fineract" id="2" context="postgresql">
+        <createTable tableName="m_extend_client_credit_score">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="credit_report_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Score Details -->
+            <column name="score_model" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="score_version" type="VARCHAR(20)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="score_name" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="credit_score" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="score_date" type="DATE">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Scoring Elements (factors that influenced the score) -->
+            <column name="scoring_elements" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="score_reason" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Score Metadata -->
+            <column name="score_range_min" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+            <column name="score_range_max" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+            <column name="score_percentile" type="DECIMAL(5,2)">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Provider Specific Data -->
+            <column name="provider_score_id" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="provider_metadata" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+
+            <!-- Audit fields -->
+            <column name="created_on_utc" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_modified_on_utc" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_by" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <!-- Add foreign key constraints -->
+        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
+                                 baseColumnNames="credit_report_id"
+                                 constraintName="FK_extend_credit_score_report"
+                                 referencedTableName="m_extend_client_credit_report"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
+                                 baseColumnNames="created_by"
+                                 constraintName="FK_extend_credit_score_created_by_user"
+                                 referencedTableName="m_appuser"
+                                 referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
+                                 baseColumnNames="last_modified_by"
+                                 constraintName="FK_extend_credit_score_modified_by_user"
+                                 referencedTableName="m_appuser"
+                                 referencedColumnNames="id"/>
+
+        <!-- Add performance indexes -->
+        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_report_id">
+            <column name="credit_report_id"/>
+        </createIndex>
+
+        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_model">
+            <column name="score_model"/>
+        </createIndex>
+
+        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_value">
+            <column name="credit_score"/>
+        </createIndex>
+
+        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_date">
+            <column name="score_date"/>
+        </createIndex>
+
+        <!-- Unique constraint to prevent duplicate scores for same model per report -->
+        <addUniqueConstraint tableName="m_extend_client_credit_score"
+                            columnNames="credit_report_id, score_model"
+                            constraintName="uk_extend_credit_score_report_model"/>
+    </changeSet>
+
+    <!-- Add check constraints for data integrity -->
+    <changeSet author="fineract" id="3">
+        <!-- Ensure credit score is within reasonable range -->
+        <sql dbms="mysql">
+            ALTER TABLE m_extend_client_credit_score
+            ADD CONSTRAINT chk_extend_credit_score_range
+            CHECK (credit_score &gt;= 0 AND credit_score &lt;= 9999);
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE m_extend_client_credit_score
+            ADD CONSTRAINT chk_extend_credit_score_range
+            CHECK (credit_score &gt;= 0 AND credit_score &lt;= 9999);
+        </sql>
+
+        <!-- Ensure score percentile is valid percentage -->
+        <sql dbms="mysql">
+            ALTER TABLE m_extend_client_credit_score
+            ADD CONSTRAINT chk_extend_credit_score_percentile
+            CHECK (score_percentile IS NULL OR (score_percentile &gt;= 0 AND score_percentile &lt;= 100));
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE m_extend_client_credit_score
+            ADD CONSTRAINT chk_extend_credit_score_percentile
+            CHECK (score_percentile IS NULL OR (score_percentile &gt;= 0 AND score_percentile &lt;= 100));
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

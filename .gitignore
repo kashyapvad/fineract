@@ -35,3 +35,9 @@ gradleExp/
 .java-version
 
 *.code-workspace
+.env
+env.md
+*.mdc
+/audit_trail/
+kb-index.yaml
+.cursor/
