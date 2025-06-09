@@ -33,6 +33,56 @@ REFERENCES:
   - VERIFICATION_CMD: `find . -name "*.java" -exec grep -l "@Autowired.*private" {} \;`
   - ANTI_PATTERN: Field injection with @Autowired instead of constructor injection
 
+### RULE: Optional Bean Configuration
+CONTEXT: Graceful handling of optional external dependencies and feature toggles
+REQUIREMENT: Optional external services and configurable features must use proper conditional bean configuration patterns
+FAIL IF:
+- Optional external dependencies injected directly without conditional configuration
+- Feature toggles implemented with runtime checks instead of conditional beans
+- Missing fallback implementations for optional services
+- Optional beans not properly wrapped in Optional<T> for null safety
+- External service availability not validated at startup
+- Optional dependencies causing application startup failures when unavailable
+VERIFICATION: Check conditional bean configurations and optional dependency handling
+REFERENCES:
+  - PATTERN_EXAMPLE: `ExtendModuleConfiguration.java:24-26` (@ConditionalOnMissingBean with Optional.empty())
+  - PATTERN_EXAMPLE: `ExtendModuleConfiguration.java:32-35` (@ConditionalOnBean with Optional.of())
+  - PATTERN_EXAMPLE: `CreditBureauProviderFactory.java:42` (@ConditionalOnProperty for feature enablement)
+  - PATTERN_EXAMPLE: `DecentroProvider.java:61` (@ConditionalOnProperty with matchIfMissing = false)
+  - PATTERN_EXAMPLE: `TwoFactorServiceImpl.java:48` (@ConditionalOnProperty("fineract.security.2fa.enabled"))
+  - PATTERN_EXAMPLE: `ExternalEventKafkaConfiguration.java:38` (@ConditionalOnProperty with havingValue)
+  - PATTERN_EXAMPLE: `TemplateConfiguration.java:35-37` (@ConditionalOnMissingBean for default implementations)
+  - USE_CASES: External payment providers, credit bureau integrations, messaging systems, cloud services
+  - ANTI_PATTERN: Direct @Autowired injection of optional services without conditional configuration
+  - ANTI_PATTERN: Runtime null checks instead of Optional<T> bean patterns
+  - ANTI_PATTERN: Feature flags in business logic instead of conditional bean registration
+  - VERIFICATION_CMD: `grep -rn "@ConditionalOnProperty" fineract-provider/src/main/java/ | head -10`
+  - VERIFICATION_CMD: `grep -rn "@ConditionalOnMissingBean" fineract-provider/src/main/java/ | head -10`
+  - CONFIGURATION_PATTERN: Use matchIfMissing = false for optional features to prevent accidental enablement
+
+### RULE: Common Provider Service Pattern
+CONTEXT: Centralized external provider integration to eliminate duplication across extend modules
+REQUIREMENT: External provider operations must be centralized in common service layer with consistent error handling
+FAIL IF:
+- Provider availability checks duplicated across multiple services
+- Provider factory access patterns repeated in different modules
+- Reference ID generation logic scattered across services
+- Provider response validation inconsistent between modules
+- Error handling patterns not standardized for provider operations
+VERIFICATION: Check provider service usage and centralization patterns
+REFERENCES:
+  - PATTERN_EXAMPLE: `ExtendProviderService.java:42-55` (centralized provider availability validation)
+  - PATTERN_EXAMPLE: `ExtendProviderService.java:98-125` (standardized customer data pull with error handling)
+  - PATTERN_EXAMPLE: `ExtendProviderService.java:127-154` (standardized credit report generation)
+  - PATTERN_EXAMPLE: `ClientKycWritePlatformServiceImpl.java:64` (using common service for validation)
+  - PATTERN_EXAMPLE: `ClientCreditBureauWritePlatformServiceImpl.java:87` (using common service for validation)
+  - USAGE_PATTERN: Services inject `ExtendProviderService` instead of `Optional<CreditBureauProviderFactory>`
+  - CENTRALIZATION_BENEFIT: Single point of change for provider logic updates
+  - CONSISTENCY_BENEFIT: Standardized error messages and validation patterns
+  - VERIFICATION_CMD: `grep -rn "ExtendProviderService" fineract-provider/src/main/java/org/apache/fineract/extend/ | head -10`
+  - ANTI_PATTERN: Direct provider factory usage in business services
+  - ANTI_PATTERN: Duplicated provider availability validation logic
+
 ### RULE: Service Method Transaction Boundaries
 CONTEXT: Proper transaction scope management for data consistency
 REQUIREMENT: Service methods must define appropriate transaction boundaries with correct propagation
@@ -133,6 +183,28 @@ FAIL IF:
 VERIFICATION: Check audit logging integration in command handlers
 REFERENCES: Audit logging implementations, command audit patterns
 
+### RULE: Financial Data Audit Trail Implementation
+CONTEXT: Comprehensive audit trails for financial operations to meet regulatory compliance requirements
+REQUIREMENT: All financial state changes must generate detailed audit entries with before/after state capture
+FAIL IF:
+- Update operations missing before/after state logging
+- Delete operations not capturing complete record state before deletion
+- Audit entries missing critical business context (user, client, operation type)
+- Financial data changes not logged with sufficient detail for compliance
+- Audit trail format inconsistent across different operations
+VERIFICATION: Check audit trail implementation in financial service operations
+REFERENCES:
+  - PATTERN_EXAMPLE: `ClientKycWritePlatformServiceImpl.java:370-378` (update audit with before/after state)
+  - PATTERN_EXAMPLE: `ClientKycWritePlatformServiceImpl.java:450-458` (delete audit with complete record state)
+  - PATTERN_EXAMPLE: `ClientCreditBureauWritePlatformServiceImpl.java:370-378` (credit report update audit)
+  - PATTERN_EXAMPLE: `ClientCreditBureauWritePlatformServiceImpl.java:220-228` (credit report delete audit)
+  - AUDIT_FORMAT: "AUDIT: OPERATION_TYPE - User: {} | Client: {} | Entity ID: {} | Command: {} | Before: [{}] | After: [{}]"
+  - COMPLIANCE_REQUIREMENT: All financial data changes must be auditable for regulatory review
+  - STATE_CAPTURE: Before and after states captured in structured format for comparison
+  - VERIFICATION_CMD: `grep -rn "AUDIT:" fineract-provider/src/main/java/org/apache/fineract/extend/ | head -10`
+  - ANTI_PATTERN: Financial operations without comprehensive audit trails
+  - ANTI_PATTERN: Audit entries missing critical business context
+
 ## Data Access and Repository Rules
 
 ### RULE: JPA Entity Relationship Management
@@ -146,6 +218,25 @@ FAIL IF:
 - Entity lifecycle events not handled correctly
 VERIFICATION: Check JPA entity definitions and relationship mappings
 REFERENCES: Entity class definitions, JPA relationship annotations
+
+### RULE: JPA AttributeConverter Implementation
+CONTEXT: Proper JPA AttributeConverter patterns for custom type conversion
+REQUIREMENT: JPA AttributeConverters must have no-argument constructors and cannot use Spring dependency injection
+FAIL IF:
+- AttributeConverter classes annotated with @Component or @Service
+- AttributeConverter using @Autowired or @RequiredArgsConstructor for dependencies
+- AttributeConverter relying on Spring context for initialization
+- Missing no-argument constructor in AttributeConverter implementation
+- Complex dependencies required in AttributeConverter (should be self-contained)
+VERIFICATION: Check AttributeConverter implementations for proper constructor patterns
+REFERENCES:
+  - PATTERN_EXAMPLE: `JsonAttributeConverter.java` (no-arg constructor with direct ObjectMapper instantiation)
+  - PATTERN_EXAMPLE: `ExternalIdConverter.java` (simple converter without dependencies)
+  - PATTERN_EXAMPLE: `LoanStatusConverter.java` (enum converter without Spring injection)
+  - VERIFICATION_CMD: `find . -name "*Converter.java" -exec grep -l "@Component\|@Service\|@Autowired" {} \;`
+  - VERIFICATION_CMD: `grep -rn "@Converter" fineract-provider/src/main/java/ | head -10`
+  - ANTI_PATTERN: AttributeConverter with @Component/@RequiredArgsConstructor causing JPA instantiation failures
+  - ERROR_SIGNATURE: "No default constructor for entity" or "Could not instantiate converter" during JPA initialization
 
 ### RULE: Query Method Naming Conventions
 CONTEXT: Consistent and self-documenting repository method names
