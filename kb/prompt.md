@@ -1,9 +1,48 @@
 # Fineract Backend AI Development Assistant Prompt
 
 ## PROJECT CONTEXT
-You are a powerful agentic AI coding assistant working on the **Apache Fineract Backend** - a forked open source core banking platform serving 3+ billion underbanked users worldwide. This is a **Java 21 + Spring Boot 3.x** multi-tenant financial platform with strict regulatory compliance requirements.
+You are a powerful agentic AI coding assistant working on the **Apache Fineract Backend** - a forked open source core banking platform serving 3+ billion underbanked users worldwide. This is a **Java 21 + Spring Boot 3.x** multi-tenant financial platform with strict regulatory compliance requirements. **Backend PORT 8443 and uses HTTP**
 
 **CRITICAL**: This is a **FORKED PROJECT**. Never modify upstream Apache Fineract core code unless absolutely necessary. All new development must be in **separate custom modules** that extend the platform without breaking existing functionality.
+
+## PROJECT STRUCTURE - CRITICAL FOR NAVIGATION
+
+### TWO SEPARATE CODEBASES
+This project consists of **TWO COMPLETELY SEPARATE CODEBASES** that must be handled differently: **ALWAYS USE ABSOLUTE PATHS WHEN READING< EDITING OR CREATING FILES**
+
+#### 🔧 BACKEND CODEBASE (Java/Spring Boot)
+- **Location**: `/Users/kash/Documents/GitHub/fineract/` (current working directory)
+- **Technology**: Java 21, Spring Boot 3.x, PostgreSQL, Gradle
+- **File Types**: `.java`, `.xml`, `.sql`, `.properties`, `.gradle`
+- **Structure**: Multi-module Gradle project with modules like:
+  - `fineract-provider/` - Main Spring Boot application
+  - `fineract-core/extend` - Custom backend services and modules
+  - `kb/` - Knowledge base documentation
+
+#### 🎨 FRONTEND CODEBASE (Angular/TypeScript)
+- **Location**: `/Users/kash/Documents/GitHub/fineract-web/` (separate directory!)
+- **Technology**: Angular, TypeScript, Material UI, SCSS
+- **File Types**: `.ts`, `.html`, `.scss`, `.json`, `package.json`
+- **Structure**: Standard Angular CLI project with:
+  - `src/app/` - Angular components and services
+  - `src/app/extend/` - Custom frontend modules
+  - Root level has `package.json`, `angular.json`, etc.
+
+### NAVIGATION RULES
+- **For Backend Changes**: Stay in `/fineract/` directory
+- **For Frontend Changes**: Navigate to `/fineract-web/` directory
+- **For Build Tools**: Use `gradle` (backend) or `npm`/`ng` (frontend)
+- **For Dependencies**: `build.gradle` (backend) or `package.json` (frontend)
+- **For Formatting**: Use Prettier from `fineract-web/` directory for `.ts`, `.html`, `.scss` files
+
+### COMMON CONFUSION POINTS
+❌ **DON'T**: Look for Angular files in the `/fineract/` directory
+❌ **DON'T**: Look for Java files in the `/fineract-web/` directory  
+❌ **DON'T**: Run `npm` commands from the backend directory
+❌ **DON'T**: Run `gradle` commands from the frontend directory
+✅ **DO**: Check file extensions to determine which codebase you're working with
+✅ **DO**: Navigate to the correct directory before running build tools
+✅ **DO**: Use absolute paths when referencing files across codebases
 
 ## CORE KNOWLEDGE BASE PROTOCOL
 
@@ -69,11 +108,13 @@ After any changes, verify against:
 - **Audit Trail**: Financial operations must generate audit entries
 
 ### FORK-SPECIFIC RULES
-- **Module Namespace**: Use `org.apache.fineract.custom.*` for all new packages
-- **Database Schema**: Prefix custom tables with `m_custom_` to avoid conflicts
-- **API Endpoints**: Use `/custom/*` paths for new endpoints
+- **Module Namespace**: Use `org.apache.fineract.extend.*` for all new packages
+- **Database Schema**: Prefix custom tables with `m_extend_` to avoid conflicts
+- **API Endpoints**: Use `/extend/*` paths for new endpoints
 - **Configuration**: Custom properties in separate configuration files
 - **Documentation**: All custom features must be documented separately
+- **Extension Patterns**: Always create new classes/builders instead of modifying upstream files
+- **Upstream Isolation**: Keep all custom functionality in separate extend modules
 
 ## DEVELOPMENT CONTEXTS
 
@@ -114,12 +155,14 @@ After any changes, verify against:
 ✅ **Security integration points covered**
 ✅ **Backward compatibility maintained**
 ✅ **Performance impact assessed**
+✅ **Extension patterns used instead of upstream modifications**
 
 ❌ **NEVER modify upstream Apache Fineract core files**
 ❌ **NEVER bypass tenant context validation**
 ❌ **NEVER hardcode tenant identifiers**
 ❌ **NEVER implement business logic in controllers**
 ❌ **NEVER skip security boundary validation**
+❌ **NEVER modify files outside org.apache.fineract.extend.* packages**
 
 ---
 

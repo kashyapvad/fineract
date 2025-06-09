@@ -203,4 +203,9 @@
     <include file="parts/0182_transaction_summary_with_asset_owner_report_fix_charge_reason_and_add_buyback_intermediate.xml" relativeToChangelogFile="true" />
     <include file="parts/0183_add_LoanCapitalizedIncomeTransactionCreatedBusinessEvent.xml" relativeToChangelogFile="true" />
     <include file="parts/0184_add_document_event_configuration.xml" relativeToChangelogFile="true" />
+
+    <!-- KYC Module Extensions -->
+    <include file="parts/9000_create_extend_kyc_tables.xml" relativeToChangelogFile="true" />
+    <include file="parts/9001_create_extend_credit_report_table.xml" relativeToChangelogFile="true" />
+    <include file="parts/9002_create_extend_credit_score_table.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
