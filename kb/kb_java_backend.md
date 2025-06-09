@@ -33,6 +33,33 @@ REFERENCES:
   - VERIFICATION_CMD: `find . -name "*.java" -exec grep -l "@Autowired.*private" {} \;`
   - ANTI_PATTERN: Field injection with @Autowired instead of constructor injection
 
+### RULE: Optional Bean Configuration
+CONTEXT: Graceful handling of optional external dependencies and feature toggles
+REQUIREMENT: Optional external services and configurable features must use proper conditional bean configuration patterns
+FAIL IF:
+- Optional external dependencies injected directly without conditional configuration
+- Feature toggles implemented with runtime checks instead of conditional beans
+- Missing fallback implementations for optional services
+- Optional beans not properly wrapped in Optional<T> for null safety
+- External service availability not validated at startup
+- Optional dependencies causing application startup failures when unavailable
+VERIFICATION: Check conditional bean configurations and optional dependency handling
+REFERENCES:
+  - PATTERN_EXAMPLE: `ExtendModuleConfiguration.java:24-26` (@ConditionalOnMissingBean with Optional.empty())
+  - PATTERN_EXAMPLE: `ExtendModuleConfiguration.java:32-35` (@ConditionalOnBean with Optional.of())
+  - PATTERN_EXAMPLE: `CreditBureauProviderFactory.java:42` (@ConditionalOnProperty for feature enablement)
+  - PATTERN_EXAMPLE: `DecentroProvider.java:61` (@ConditionalOnProperty with matchIfMissing = false)
+  - PATTERN_EXAMPLE: `TwoFactorServiceImpl.java:48` (@ConditionalOnProperty("fineract.security.2fa.enabled"))
+  - PATTERN_EXAMPLE: `ExternalEventKafkaConfiguration.java:38` (@ConditionalOnProperty with havingValue)
+  - PATTERN_EXAMPLE: `TemplateConfiguration.java:35-37` (@ConditionalOnMissingBean for default implementations)
+  - USE_CASES: External payment providers, credit bureau integrations, messaging systems, cloud services
+  - ANTI_PATTERN: Direct @Autowired injection of optional services without conditional configuration
+  - ANTI_PATTERN: Runtime null checks instead of Optional<T> bean patterns
+  - ANTI_PATTERN: Feature flags in business logic instead of conditional bean registration
+  - VERIFICATION_CMD: `grep -rn "@ConditionalOnProperty" fineract-provider/src/main/java/ | head -10`
+  - VERIFICATION_CMD: `grep -rn "@ConditionalOnMissingBean" fineract-provider/src/main/java/ | head -10`
+  - CONFIGURATION_PATTERN: Use matchIfMissing = false for optional features to prevent accidental enablement
+
 ### RULE: Service Method Transaction Boundaries
 CONTEXT: Proper transaction scope management for data consistency
 REQUIREMENT: Service methods must define appropriate transaction boundaries with correct propagation
@@ -146,6 +173,25 @@ FAIL IF:
 - Entity lifecycle events not handled correctly
 VERIFICATION: Check JPA entity definitions and relationship mappings
 REFERENCES: Entity class definitions, JPA relationship annotations
+
+### RULE: JPA AttributeConverter Implementation
+CONTEXT: Proper JPA AttributeConverter patterns for custom type conversion
+REQUIREMENT: JPA AttributeConverters must have no-argument constructors and cannot use Spring dependency injection
+FAIL IF:
+- AttributeConverter classes annotated with @Component or @Service
+- AttributeConverter using @Autowired or @RequiredArgsConstructor for dependencies
+- AttributeConverter relying on Spring context for initialization
+- Missing no-argument constructor in AttributeConverter implementation
+- Complex dependencies required in AttributeConverter (should be self-contained)
+VERIFICATION: Check AttributeConverter implementations for proper constructor patterns
+REFERENCES:
+  - PATTERN_EXAMPLE: `JsonAttributeConverter.java` (no-arg constructor with direct ObjectMapper instantiation)
+  - PATTERN_EXAMPLE: `ExternalIdConverter.java` (simple converter without dependencies)
+  - PATTERN_EXAMPLE: `LoanStatusConverter.java` (enum converter without Spring injection)
+  - VERIFICATION_CMD: `find . -name "*Converter.java" -exec grep -l "@Component\|@Service\|@Autowired" {} \;`
+  - VERIFICATION_CMD: `grep -rn "@Converter" fineract-provider/src/main/java/ | head -10`
+  - ANTI_PATTERN: AttributeConverter with @Component/@RequiredArgsConstructor causing JPA instantiation failures
+  - ERROR_SIGNATURE: "No default constructor for entity" or "Could not instantiate converter" during JPA initialization
 
 ### RULE: Query Method Naming Conventions
 CONTEXT: Consistent and self-documenting repository method names

@@ -93,6 +93,29 @@ REFERENCES:
   - VERIFICATION_CMD: `find . -name "*Controller.java" -exec grep -L "tenant" {} \;`
   - ANTI_PATTERN: API controllers that don't validate tenant context before data access
 
+## Fork Safety Rules
+
+### RULE: Upstream File Modification Prohibition [P0]
+CONTEXT: Fork maintenance requires avoiding upstream file modifications to prevent merge conflicts and maintain upgrade path
+REQUIREMENT: Custom functionality must be implemented through extension patterns, not upstream file modifications
+FAIL IF:
+- Any upstream Apache Fineract core file modified for custom functionality
+- Infrastructure files like CommandWrapperBuilder, CommandHandlerProvider modified
+- Core service files modified to add custom business logic
+- Configuration files in upstream packages modified for custom features
+- Entity files modified to add custom fields or relationships
+- Existing API controllers modified to add custom endpoints
+VERIFICATION: Check git history of upstream files for custom modifications
+REFERENCES:
+  - FORK_SAFE_PATTERN: `ExtendCommandWrapperBuilder.java` (custom builder instead of modifying CommandWrapperBuilder)
+  - FORK_SAFE_PATTERN: `org.apache.fineract.extend.*` packages for all custom functionality
+  - FORK_SAFE_PATTERN: Custom service implementations extending upstream interfaces
+  - FORK_SAFE_PATTERN: Custom configuration classes instead of modifying upstream config
+  - VERIFICATION_CMD: `git log --oneline --since="1 month ago" -- fineract-core/ | grep -v "Merge\|Update"`
+  - VERIFICATION_CMD: `find fineract-provider/src/main/java/org/apache/fineract -name "*.java" -not -path "*/extend/*" -exec git log --oneline -1 {} \;`
+  - ANTI_PATTERN: Modifying any file outside of `org.apache.fineract.extend.*` packages for custom functionality
+  - EXCEPTION: Only modify upstream files for critical bug fixes or security patches that will be contributed back
+
 ## Command-Query Separation Rules
 
 ### RULE: Command Handler Implementation [P1]
@@ -230,6 +253,69 @@ FAIL IF:
 VERIFICATION: Check authentication integration in API controllers and services
 REFERENCES: Authentication service usage, permission checking implementations
 
+### RULE: Environment Variable Management [P0]
+CONTEXT: Centralized environment variable management for configuration consistency
+REQUIREMENT: All environment variables must be managed through env.md which automatically syncs with .env
+FAIL IF:
+- Environment variables added directly to .env without documentation
+- Configuration values hardcoded instead of using environment variables
+- Missing environment variables not documented in env.md
+- Environment-specific configurations scattered across multiple files
+- Sensitive configuration values committed to version control
+VERIFICATION: Check that all environment variables are documented in env.md and properly used in configuration
+REFERENCES:
+  - CONFIGURATION_FILE: `env.md` (symlinked to .env for automatic synchronization)
+  - PATTERN: Add new environment variables to env.md, they will automatically appear in .env
+  - PATTERN: Read current environment configuration from env.md instead of .env
+  - VERIFICATION_CMD: `grep -rn "System.getenv\|@Value.*\${" fineract-provider/src/main/java/ | head -10`
+  - VERIFICATION_CMD: `diff env.md .env` (should show no differences due to symlink)
+  - ANTI_PATTERN: Directly editing .env file or hardcoding configuration values
+
+### RULE: No Mock Data or Mock Implementations [P0]
+CONTEXT: Production financial platform requires real implementations and authentic data processing
+REQUIREMENT: All services must implement actual business logic without mock data, mock responses, or placeholder implementations
+FAIL IF:
+- Mock data used in any service implementations
+- Placeholder TODO comments left in production code
+- Fake responses returned from business services
+- Mock API integrations used instead of real external connections
+- Test data generators used in production services
+- Development-only code paths left in production builds
+VERIFICATION: Check for mock data, fake responses, and TODO comments in production code
+REFERENCES:
+  - VERIFICATION_CMD: `grep -rn "mock\|Mock\|MOCK\|fake\|Fake\|FAKE" fineract-provider/src/main/java/ --exclude-dir=test`
+  - VERIFICATION_CMD: `grep -rn "TODO" fineract-provider/src/main/java/ --exclude-dir=test`
+  - VERIFICATION_CMD: `grep -rn "placeholder\|dummy\|test.*data" fineract-provider/src/main/java/ --exclude-dir=test`
+  - ANTI_PATTERN: Services returning mock responses or fake data
+  - ANTI_PATTERN: External integrations with mock implementations
+  - ANTI_PATTERN: TODO comments in production service implementations
+  - EXCEPTION: Test classes and test resources are exempt from this rule
+
+### RULE: DRY Principle for Service Layer Logic [P1]
+
+CONTEXT: Common service operations must be consolidated to avoid code duplication and ensure consistency
+REQUIREMENT: Duplicate service logic must be extracted into reusable methods with proper abstraction
+FAIL IF:
+
+- Similar API call patterns duplicated across multiple services
+- Common data transformation logic repeated in multiple methods
+- Identical error handling patterns not consolidated
+- Template/dropdown data loading logic duplicated unnecessarily
+- Entity mapping logic scattered across multiple services
+- Validation patterns repeated instead of using shared validators
+  VERIFICATION: Check for duplicated service logic and ensure consolidation
+  REFERENCES:
+  - PATTERN_EXAMPLE: `mapToClientCreditBureauData()` - consolidated entity-to-DTO mapping logic
+  - PATTERN_EXAMPLE: Shared validation services instead of per-service validation logic
+  - CONSOLIDATION_PATTERN: Single method handling multiple use cases with optional parameters
+  - TEMPLATE_AVOIDANCE: Avoid unnecessary template API endpoints that provide unused dropdown data
+  - MAPPING_PATTERN: Centralized entity-to-DTO mapping methods with configurable field mapping
+  - VALIDATION_PATTERN: Shared validator classes for common patterns (PAN, Aadhaar, mobile)
+  - VERIFICATION_CMD: `grep -rn "mapTo.*Data\|template\|Template" fineract-provider/src/main/java/ | grep -v test`
+  - ANTI_PATTERN: Multiple services with 70%+ identical logic for similar operations
+  - ANTI_PATTERN: Template API endpoints that load unused dropdown data
+  - ANTI_PATTERN: Scattered entity mapping logic across multiple service implementations
+
 ### RULE: Error Handling with User Privacy
 CONTEXT: Consistent error responses that don't expose sensitive system information
 REQUIREMENT: All error responses must be user-friendly without exposing internal system details
@@ -241,3 +327,29 @@ FAIL IF:
 - Sensitive data included in error logs
 VERIFICATION: Check exception handling and error response formatting
 REFERENCES: Exception handler implementations, error response formatters
+
+### RULE: Database Constraint Error Handling [P0]
+
+CONTEXT: Database constraint violations must be converted to user-friendly error messages following Fineract patterns
+REQUIREMENT: All service methods must catch DataIntegrityViolationException and convert to PlatformDataIntegrityException with meaningful messages
+FAIL IF:
+
+- DataIntegrityViolationException thrown directly to API layer without conversion
+- Generic exception handling used instead of specific constraint error handling
+- Database constraint names exposed directly to users
+- Error handling not following upstream Fineract patterns (AppUserWritePlatformServiceImpl, etc.)
+- Missing handleDataIntegrityIssues() method in custom service implementations
+- JpaSystemException and PersistenceException not properly caught and converted
+  VERIFICATION: Check exception handling in @Transactional service methods
+  REFERENCES:
+  - PATTERN_EXAMPLE: `AppUserWritePlatformServiceImpl.java:137-142` (DataIntegrityViolationException handling)
+  - PATTERN_EXAMPLE: `AppUserWritePlatformServiceImpl.java:177-182` (JpaSystemException handling with ExceptionUtils.getRootCause)
+  - PATTERN_EXAMPLE: `ClientCreditBureauWritePlatformServiceImpl.handleDataIntegrityIssues()` (custom constraint handling)
+  - UPSTREAM_PATTERN: `catch (final DataIntegrityViolationException dve) { throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve); }`
+  - UPSTREAM_PATTERN: `catch (final JpaSystemException dve) { Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()); throw handleDataIntegrityIssues(command, throwable, dve); }`
+  - ERROR_CONVERSION: `PlatformDataIntegrityException("error.msg.code", "User message", "field", "Technical details")`
+  - VERIFICATION_CMD: `grep -rn "DataIntegrityViolationException" fineract-provider/src/main/java/ | grep -v test`
+  - VERIFICATION_CMD: `grep -rn "handleDataIntegrityIssues" fineract-provider/src/main/java/ | head -10`
+  - ANTI_PATTERN: `catch (Exception e) { throw e; }` without specific constraint handling
+  - ANTI_PATTERN: Exposing database constraint names like "uk_extend_credit_score_report_model" directly to users
+  - ANTI_PATTERN: Not catching JpaSystemException and PersistenceException in addition to DataIntegrityViolationException
