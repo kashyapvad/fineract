@@ -204,4 +204,9 @@
     <include file="parts/0183_add_LoanCapitalizedIncomeTransactionCreatedBusinessEvent.xml" relativeToChangelogFile="true" />
     <include file="parts/0184_add_document_event_configuration.xml" relativeToChangelogFile="true" />
     <include file="parts/0185_loan_buy_down_fee.xml" relativeToChangelogFile="true" />
+
+    <!-- KYC Module Extensions -->
+    <include file="parts/9000_create_extend_kyc_tables.xml" relativeToChangelogFile="true" />
+    <include file="parts/9001_create_extend_credit_report_table.xml" relativeToChangelogFile="true" />
+    <include file="parts/9002_create_extend_credit_score_table.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>
