@@ -276,6 +276,7 @@ allprojects  {
             '**/.gitignore',
             '**/.openapi-generator-ignore',
             '**/.gitkeep',
+            '**/.env',
             '**/*.iml',
             '**/config/swagger/templates/**',
             // Notice files

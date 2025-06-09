@@ -65,16 +65,7 @@ REFERENCES: API security configurations, rate limiting implementations
 ## Data Protection and Privacy Rules
 
 ### RULE: Tenant Data Isolation Security
-CONTEXT: Complete data separation and access control in multi-tenant architecture
-REQUIREMENT: Tenant data must be completely isolated with no possibility of cross-tenant access
-FAIL IF:
-- Data queries not properly scoped to current tenant context
-- Administrative functions bypassing tenant isolation
-- Database-level tenant isolation not properly enforced
-- Audit logs not capturing tenant context for all operations
-- Backup and recovery processes not tenant-aware
-VERIFICATION: Check tenant isolation implementation across all data access points
-REFERENCES: Tenant isolation implementations, data access security patterns
+**Note: Tenant data isolation is handled automatically by the Fineract framework. Custom code should focus on business logic rather than tenant management.**
 
 ### RULE: Personal Data Protection (GDPR Compliance)
 CONTEXT: Privacy protection and compliance with data protection regulations
