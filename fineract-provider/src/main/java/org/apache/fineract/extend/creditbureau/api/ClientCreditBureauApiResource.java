@@ -38,7 +38,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.Collection;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
@@ -46,10 +45,9 @@ import org.apache.fineract.extend.commands.service.ExtendCommandWrapperBuilder;
 import org.apache.fineract.extend.creditbureau.data.ClientCreditBureauData;
 import org.apache.fineract.extend.creditbureau.data.PullCreditReportRequest;
 import org.apache.fineract.extend.creditbureau.service.ClientCreditBureauReadPlatformService;
-import org.apache.fineract.extend.common.provider.CreditBureauProviderFactory;
+import org.apache.fineract.extend.common.service.ExtendProviderService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
@@ -74,7 +72,7 @@ public class ClientCreditBureauApiResource {
     private final DefaultToApiJsonSerializer<ClientCreditBureauData> toApiJsonSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
-    private final Optional<CreditBureauProviderFactory> creditBureauProviderFactory;
+    private final ExtendProviderService extendProviderService;
 
     @GET
     @Path("reports")
@@ -142,12 +140,8 @@ public class ClientCreditBureauApiResource {
     public String pullCreditReport(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
             @Parameter(hidden = true) final String apiRequestBodyAsJson) {
 
-        // Check if external credit bureau provider is available
-        if (this.creditBureauProviderFactory.isEmpty() || !this.creditBureauProviderFactory.get().isProviderAvailable()) {
-            throw new PlatformServiceUnavailableException("error.msg.creditbureau.provider.not.available",
-                    "Credit bureau provider is not configured or unavailable. Please contact system administrator to configure external credit bureau services.",
-                    "External credit bureau provider configuration is missing or invalid");
-        }
+        // Validate provider availability using common service
+        this.extendProviderService.validateProviderAvailable();
 
         final CommandWrapper commandRequest = ExtendCommandWrapperBuilder.pullClientCreditBureauReport(clientId, apiRequestBodyAsJson);
 

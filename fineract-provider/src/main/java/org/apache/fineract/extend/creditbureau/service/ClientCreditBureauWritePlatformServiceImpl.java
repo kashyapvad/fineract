@@ -21,25 +21,21 @@ package org.apache.fineract.extend.creditbureau.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.extend.common.dto.CreditBureauProviderRequest;
 import org.apache.fineract.extend.common.dto.CreditBureauProviderResponse;
-import org.apache.fineract.extend.common.provider.CreditBureauProviderFactory;
+import org.apache.fineract.extend.common.service.ExtendProviderService;
 import org.apache.fineract.extend.creditbureau.exception.ClientCreditBureauNotFoundException;
 import org.apache.fineract.extend.creditbureau.domain.ClientCreditReportDetails;
 import org.apache.fineract.extend.creditbureau.domain.ClientCreditReportDetailsRepositoryWrapper;
@@ -51,7 +47,6 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
-import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
@@ -77,7 +72,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     private final ClientRepositoryWrapper clientRepositoryWrapper;
     private final PlatformSecurityContext context;
     private final PullCreditReportRequestValidator pullCreditReportValidator;
-    private final Optional<CreditBureauProviderFactory> providerFactory;
+    private final ExtendProviderService extendProviderService;
     private final ClientCreditReportDetailsRepositoryWrapper creditReportRepositoryWrapper;
     private final ClientCreditScoreDetailsRepository creditScoreRepository;
     private final ObjectMapper objectMapper;
@@ -85,15 +80,12 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     @Override
     @Transactional
     public CommandProcessingResult pullCreditReport(final JsonCommand command) {
-        // Validate tenant context (Critical Rule: Tenant Context Validation)
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
-            // Check if external credit bureau provider is available
-            if (this.providerFactory.isEmpty() || !this.providerFactory.get().isProviderAvailable()) {
-                throw new RuntimeException("Credit bureau provider is not configured or unavailable. Please contact system administrator to configure external credit bureau services.");
-            }
+            // Validate provider availability using common service
+            this.extendProviderService.validateProviderAvailable();
 
             // Validate command using existing validator
             this.pullCreditReportValidator.validateForPull(command.json());
@@ -108,7 +100,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             // Extract report parameters
             final String reportTypeCode = command.stringValueOfParameterNamed("reportType");
             final CreditBureauReportType reportType = CreditBureauReportType.fromCode(reportTypeCode);
-            final String creditBureauProvider = this.providerFactory.get().getConfiguredProviderName();
+            final String creditBureauProvider = this.extendProviderService.getProviderName();
 
             // Check for recent reports to prevent unnecessary API calls
             if (this.creditReportRepositoryWrapper.hasRecentSuccessfulReport(clientId, creditBureauProvider, 7)) {
@@ -123,14 +115,13 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             final ClientCreditReportDetails savedDetails = this.creditReportRepositoryWrapper.save(creditReportDetails);
 
             try {
-                // Build provider-agnostic request
+                // Build provider-agnostic request using common service
                 final CreditBureauProviderRequest providerRequest = CreditBureauProviderRequest.builder()
-                        .referenceId("FINERACT_" + clientId + "_" + System.currentTimeMillis()).consent(true).clientId(clientId)
+                        .referenceId(this.extendProviderService.createReferenceId("CREDIT_REPORT", clientId)).consent(true).clientId(clientId)
                         .customerName(client.getDisplayName()).mobileNumber(client.mobileNo()).reportType("FULL_REPORT").build();
 
-                // Call provider-agnostic API to generate credit report
-                final CreditBureauProviderResponse providerResponse = this.providerFactory.get().getProvider()
-                        .generateCreditReport(providerRequest);
+                // Call provider-agnostic API to generate credit report using common service
+                final CreditBureauProviderResponse providerResponse = this.extendProviderService.generateCreditReport(providerRequest);
 
                 if (!providerResponse.isSuccess()) {
                     throw new RuntimeException("Credit report generation failed: " + providerResponse.getMessage());
@@ -187,10 +178,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     @Override
     @Transactional
     public CommandProcessingResult deleteCreditReport(final JsonCommand command) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract parameters
             final Long clientId = command.getClientId();
@@ -198,6 +188,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
 
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+            final AppUser currentUser = this.context.authenticatedUser();
 
             // Find and validate credit report record exists and belongs to client
             final ClientCreditReportDetails creditReportDetails = this.creditReportRepositoryWrapper
@@ -207,8 +198,22 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 throw new ClientCreditBureauNotFoundException(reportId);
             }
 
+            // AUDIT TRAIL: Capture state before deletion for compliance tracking
+            final String deletedState = String.format("Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s|CreatedDate:%s|ScoreCount:%s", 
+                creditReportDetails.getCreditBureauProvider(), creditReportDetails.getReportType(),
+                creditReportDetails.getReportStatus(), creditReportDetails.getPrimaryCreditScore(),
+                creditReportDetails.getPrimaryCreditRating(), creditReportDetails.getCustomerName(),
+                creditReportDetails.getTotalAccounts(), creditReportDetails.getActiveAccounts(),
+                creditReportDetails.getTotalCreditLimit(), creditReportDetails.getTotalOutstandingAmount(),
+                creditReportDetails.getReportSummary(), creditReportDetails.getCreatedDate().orElse(null),
+                creditReportDetails.getCreditScores().size());
+
             // Delete the credit report record (cascades to credit scores)
             this.creditReportRepositoryWrapper.deleteById(reportId);
+
+            // AUDIT TRAIL: Log the deletion operation with complete record state for compliance
+            log.info("AUDIT: CREDIT REPORT DELETE - User: {} | Client: {} | Report ID: {} | Command: {} | Deleted Record: [{}]", 
+                currentUser.getId(), clientId, reportId, command.commandId(), deletedState);
 
             log.info("Successfully deleted credit report {} for client {}", reportId, clientId);
 
@@ -224,10 +229,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     @Override
     @Transactional
     public CommandProcessingResult createCreditReport(final JsonCommand command) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -308,10 +312,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     @Override
     @Transactional
     public CommandProcessingResult updateCreditReport(final JsonCommand command) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract parameters
             final Long clientId = command.getClientId();
@@ -319,6 +322,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
 
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+            final AppUser currentUser = this.context.authenticatedUser();
 
             // Find and validate credit report record exists and belongs to client
             final ClientCreditReportDetails creditReportDetails = this.creditReportRepositoryWrapper
@@ -327,6 +331,15 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             if (!creditReportDetails.getClientId().equals(clientId)) {
                 throw new ClientCreditBureauNotFoundException(reportId);
             }
+
+            // AUDIT TRAIL: Capture original state for compliance tracking
+            final String originalState = String.format("Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s", 
+                creditReportDetails.getCreditBureauProvider(), creditReportDetails.getReportType(),
+                creditReportDetails.getReportStatus(), creditReportDetails.getPrimaryCreditScore(),
+                creditReportDetails.getPrimaryCreditRating(), creditReportDetails.getCustomerName(),
+                creditReportDetails.getTotalAccounts(), creditReportDetails.getActiveAccounts(),
+                creditReportDetails.getTotalCreditLimit(), creditReportDetails.getTotalOutstandingAmount(),
+                creditReportDetails.getReportSummary());
 
             // Update customer information if provided
             updateCustomerInformationFromCommand(creditReportDetails, command);
@@ -358,6 +371,18 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             updateCreditScoresFromCommand(creditReportDetails, command);
 
             final ClientCreditReportDetails savedDetails = this.creditReportRepositoryWrapper.save(creditReportDetails);
+
+            // AUDIT TRAIL: Log the update operation with before/after state for compliance
+            final String newState = String.format("Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s", 
+                savedDetails.getCreditBureauProvider(), savedDetails.getReportType(),
+                savedDetails.getReportStatus(), savedDetails.getPrimaryCreditScore(),
+                savedDetails.getPrimaryCreditRating(), savedDetails.getCustomerName(),
+                savedDetails.getTotalAccounts(), savedDetails.getActiveAccounts(),
+                savedDetails.getTotalCreditLimit(), savedDetails.getTotalOutstandingAmount(),
+                savedDetails.getReportSummary());
+            
+            log.info("AUDIT: CREDIT REPORT UPDATE - User: {} | Client: {} | Report ID: {} | Command: {} | Original: [{}] | Updated: [{}]", 
+                currentUser.getId(), clientId, reportId, command.commandId(), originalState, newState);
 
             log.info("Successfully updated credit report {} for client {}", reportId, clientId);
 

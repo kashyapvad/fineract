@@ -20,18 +20,16 @@ package org.apache.fineract.extend.kyc.service;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.extend.common.dto.CustomerDataProviderRequest;
 import org.apache.fineract.extend.common.dto.CustomerDataProviderResponse;
-import org.apache.fineract.extend.common.provider.CreditBureauProviderFactory;
+import org.apache.fineract.extend.common.service.ExtendProviderService;
 import org.apache.fineract.extend.kyc.domain.ClientKycDetails;
 import org.apache.fineract.extend.kyc.domain.ClientKycDetailsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
-import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
@@ -54,8 +52,8 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     private final PlatformSecurityContext context;
     private final ClientKycDetailsRepositoryWrapper kycRepositoryWrapper;
     
-    // Make provider factory optional - only needed for API verification
-    private final Optional<CreditBureauProviderFactory> optionalProviderFactory;
+    // Common provider service for external credit bureau integrations
+    private final ExtendProviderService extendProviderService;
 
     // All KYC operations now use dedicated entity tables instead of data tables
     // This provides better performance, querying capabilities, and type safety
@@ -63,15 +61,12 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     @Override
     @Transactional
     public CommandProcessingResult verifyKycViaApi(final JsonCommand command) {
-        // Check if provider factory is available
-        if (optionalProviderFactory.isEmpty()) {
-            throw new RuntimeException("Credit bureau provider not configured. Please configure credit bureau settings before using API verification.");
-        }
+        // Validate provider availability using common service
+        this.extendProviderService.validateProviderAvailable();
         
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -88,14 +83,14 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             final String documentNumber = command.stringValueOfParameterNamed("documentNumber");
 
             try {
-                // Build provider-agnostic request for customer data pull
+                // Build provider-agnostic request for customer data pull using common service
                 final CustomerDataProviderRequest providerRequest = CustomerDataProviderRequest.builder()
-                        .referenceId("FINERACT_KYC_" + clientId + "_" + System.currentTimeMillis()).consent(true).clientId(clientId)
+                        .referenceId(this.extendProviderService.createReferenceId("KYC", clientId)).consent(true).clientId(clientId)
                         .customerName(client.getDisplayName()).mobileNumber(client.mobileNo()).documentType(documentType)
                         .documentNumber(documentNumber).build();
 
-                // Call provider-agnostic API for customer data pull
-                final CustomerDataProviderResponse providerResponse = optionalProviderFactory.get().getProvider().pullCustomerData(providerRequest);
+                // Call provider-agnostic API for customer data pull using common service
+                final CustomerDataProviderResponse providerResponse = this.extendProviderService.pullCustomerData(providerRequest);
 
                 if (!providerResponse.isSuccess()) {
                     throw new RuntimeException("Customer data pull failed: " + providerResponse.getMessage());
@@ -107,7 +102,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                         : new HashMap<>();
 
                 // Update KYC record with API verification results
-                kycDetails.markApiVerificationCompleted(optionalProviderFactory.get().getConfiguredProviderName(),
+                kycDetails.markApiVerificationCompleted(this.extendProviderService.getProviderName(),
                         providerResponse.getRawProviderResponse(), currentUser, verificationResults);
 
                 final ClientKycDetails savedKyc = this.kycRepositoryWrapper.save(kycDetails);
@@ -131,10 +126,9 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     @Override
     @Transactional
     public CommandProcessingResult verifyKycManually(final JsonCommand command) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -181,10 +175,9 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     @Override
     @Transactional
     public CommandProcessingResult unverifyKycManually(final JsonCommand command) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -247,10 +240,9 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     @Override
     @Transactional
     public CommandProcessingResult createKycDetails(final JsonCommand command) {
-        // Validate tenant context (Critical Rule: Tenant Context Validation)
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -326,10 +318,9 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     @Override
     @Transactional
     public CommandProcessingResult updateKycDetails(final JsonCommand command) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract parameters
             final Long clientId = command.getClientId();
@@ -337,6 +328,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
 
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+            final AppUser currentUser = this.context.authenticatedUser();
 
             // Find and validate KYC record exists and belongs to client
             final ClientKycDetails kycDetails = this.kycRepositoryWrapper.findOneThrowExceptionIfNotFound(kycId);
@@ -345,6 +337,13 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             if (!kycDetails.getClient().getId().equals(clientId)) {
                 throw new RuntimeException("KYC record does not belong to the specified client");
             }
+
+            // AUDIT TRAIL: Capture original state for compliance tracking
+            final String originalState = String.format("PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s", 
+                kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), 
+                kycDetails.getPassportNumber(), kycDetails.getDrivingLicenseNumber(),
+                kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(), kycDetails.getVoterIdVerified(),
+                kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(), kycDetails.getVerificationNotes());
 
             // Update document information if provided
             if (command.hasParameter("panNumber")) {
@@ -393,6 +392,16 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
 
             this.kycRepositoryWrapper.save(kycDetails);
 
+            // AUDIT TRAIL: Log the update operation with before/after state for compliance
+            final String newState = String.format("PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s", 
+                kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), 
+                kycDetails.getPassportNumber(), kycDetails.getDrivingLicenseNumber(),
+                kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(), kycDetails.getVoterIdVerified(),
+                kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(), kycDetails.getVerificationNotes());
+            
+            log.info("AUDIT: KYC UPDATE - User: {} | Client: {} | KYC ID: {} | Command: {} | Original: [{}] | Updated: [{}]", 
+                currentUser.getId(), clientId, kycId, command.commandId(), originalState, newState);
+
             log.info("Successfully updated KYC details {} for client {}", kycId, clientId);
 
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(kycId).withClientId(clientId)
@@ -407,10 +416,9 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     @Override
     @Transactional
     public CommandProcessingResult deleteKycDetails(final JsonCommand command) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Extract parameters
             final Long clientId = command.getClientId();
@@ -418,6 +426,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
 
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+            final AppUser currentUser = this.context.authenticatedUser();
 
             // Find and validate KYC record exists and belongs to client
             final ClientKycDetails kycDetails = this.kycRepositoryWrapper.findOneThrowExceptionIfNotFound(kycId);
@@ -427,8 +436,20 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                 throw new RuntimeException("KYC record does not belong to the specified client");
             }
 
+            // AUDIT TRAIL: Capture state before deletion for compliance tracking
+            final String deletedState = String.format("PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s|CreatedDate:%s", 
+                kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), 
+                kycDetails.getPassportNumber(), kycDetails.getDrivingLicenseNumber(),
+                kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(), kycDetails.getVoterIdVerified(),
+                kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(), kycDetails.getVerificationNotes(),
+                kycDetails.getCreatedDate().orElse(null));
+
             // Delete the KYC record directly from the entity table
             this.kycRepositoryWrapper.deleteById(kycId);
+
+            // AUDIT TRAIL: Log the deletion operation with complete record state for compliance
+            log.info("AUDIT: KYC DELETE - User: {} | Client: {} | KYC ID: {} | Command: {} | Deleted Record: [{}]", 
+                currentUser.getId(), clientId, kycId, command.commandId(), deletedState);
 
             log.info("Successfully deleted KYC details {} for client {}", kycId, clientId);
 

@@ -29,13 +29,10 @@ import org.apache.fineract.extend.creditbureau.domain.ClientCreditReportDetails;
 import org.apache.fineract.extend.creditbureau.domain.ClientCreditReportDetailsRepositoryWrapper;
 import org.apache.fineract.extend.creditbureau.domain.ClientCreditScoreDetails;
 import org.apache.fineract.extend.creditbureau.domain.CreditBureauReportType;
-import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Implementation of ClientCreditBureauReadPlatformService.
@@ -55,10 +52,9 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
     @Override
     @Transactional(readOnly = true)
     public Collection<ClientCreditBureauData> retrieveClientCreditReports(final Long clientId) {
-        // Validate tenant context (Critical Rule: Tenant Context Validation)
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Validate client exists and belongs to current tenant
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
@@ -78,10 +74,9 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
     @Override
     @Transactional(readOnly = true)
     public ClientCreditBureauData retrieveCreditReport(final Long clientId, final Long reportId) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
@@ -110,10 +105,9 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
      */
     @Transactional(readOnly = true)
     public List<ClientCreditBureauData> retrieveCreditReportsByType(final Long clientId, final String reportTypeCode) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
@@ -139,10 +133,9 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
      */
     @Transactional(readOnly = true)
     public List<ClientCreditBureauData> retrieveCreditReportsByProvider(final Long clientId, final String provider) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);

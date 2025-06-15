@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.extend.kyc.data.ClientKycData;
 import org.apache.fineract.extend.kyc.domain.ClientKycDetails;
 import org.apache.fineract.extend.kyc.domain.ClientKycDetailsRepositoryWrapper;
-import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.springframework.stereotype.Service;
@@ -44,10 +43,9 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
 
     @Override
     public ClientKycData retrieveClientKyc(Long clientId) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Step 1: Validate client exists
             
@@ -76,10 +74,9 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
 
     @Override
     public ClientKycData retrieveTemplate(Long clientId) {
-        // Validate tenant context
-        final String tenantIdentifier = ThreadLocalContextUtil.getTenant().getName();
+        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
         
-
         try {
             // Validate client exists
             final var client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
