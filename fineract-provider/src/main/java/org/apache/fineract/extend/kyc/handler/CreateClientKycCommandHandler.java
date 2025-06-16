@@ -29,8 +29,8 @@ import org.springframework.stereotype.Service;
 /**
  * Command handler for creating client KYC details.
  *
- * This handler processes commands to create new KYC details records for clients with manual data entry
- * by staff members.
+ * This handler processes commands to create new KYC details records for clients with manual data entry by staff
+ * members.
  */
 @Service
 @RequiredArgsConstructor
@@ -43,4 +43,4 @@ public class CreateClientKycCommandHandler implements NewCommandSourceHandler {
     public CommandProcessingResult processCommand(final JsonCommand command) {
         return this.clientKycWritePlatformService.createKycDetails(command);
     }
-} 
+}

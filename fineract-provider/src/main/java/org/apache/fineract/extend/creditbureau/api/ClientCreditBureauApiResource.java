@@ -42,10 +42,10 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.extend.commands.service.ExtendCommandWrapperBuilder;
+import org.apache.fineract.extend.common.service.ExtendProviderService;
 import org.apache.fineract.extend.creditbureau.data.ClientCreditBureauData;
 import org.apache.fineract.extend.creditbureau.data.PullCreditReportRequest;
 import org.apache.fineract.extend.creditbureau.service.ClientCreditBureauReadPlatformService;
-import org.apache.fineract.extend.common.service.ExtendProviderService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
@@ -119,8 +119,6 @@ public class ClientCreditBureauApiResource {
         return this.toApiJsonSerializer.serialize(settings, creditReport);
     }
 
-
-
     @POST
     @Path("pull")
     @Consumes({ MediaType.APPLICATION_JSON })
@@ -180,18 +178,11 @@ public class ClientCreditBureauApiResource {
             + "This is useful for entering legacy data or data from other sources.\n\n" + "Mandatory Fields: reportType\n\n"
             + "Optional Fields: creditScore, reportData, customerInfo, financialInfo, additionalData\n\n"
             + "The additionalData field accepts JSON structure for custom data entry that doesn't fit standard fields.\n\n"
-            + "Example Requests:\n\n"
-            + "clients/1/extend/creditreport/create\n\n" + "{\n" + "  \"reportType\": \"MANUAL_ENTRY\",\n"
+            + "Example Requests:\n\n" + "clients/1/extend/creditreport/create\n\n" + "{\n" + "  \"reportType\": \"MANUAL_ENTRY\",\n"
             + "  \"creditBureauProvider\": \"MANUAL\",\n" + "  \"creditScore\": 750,\n" + "  \"scoreModel\": \"TRANSUNION_CIBIL\",\n"
             + "  \"reportSummary\": \"Good credit history\",\n" + "  \"reportNotes\": \"Manually entered from legacy system\",\n"
-            + "  \"additionalData\": {\n"
-            + "    \"section1\": {\n"
-            + "      \"customField1\": \"value1\",\n"
-            + "      \"customField2\": \"value2\"\n"
-            + "    },\n"
-            + "    \"notes\": \"Additional context information\"\n"
-            + "  }\n"
-            + "}")
+            + "  \"additionalData\": {\n" + "    \"section1\": {\n" + "      \"customField1\": \"value1\",\n"
+            + "      \"customField2\": \"value2\"\n" + "    },\n" + "    \"notes\": \"Additional context information\"\n" + "  }\n" + "}")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = Object.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CommandProcessingResult.class))) })
@@ -213,18 +204,12 @@ public class ClientCreditBureauApiResource {
             + "This endpoint allows updating credit report data, scores, and metadata. "
             + "Useful for correcting information or adding additional details.\n\n"
             + "Optional Fields: Any credit report field can be updated including additionalData\n\n"
-            + "The additionalData field can be used to add supplemental information to existing reports.\n\n"
-            + "Example Requests:\n\n"
+            + "The additionalData field can be used to add supplemental information to existing reports.\n\n" + "Example Requests:\n\n"
             + "clients/1/extend/creditreport/reports/5\n\n" + "{\n" + "  \"creditScore\": 780,\n"
-            + "  \"reportSummary\": \"Updated after recent payment\",\n" + "  \"reportNotes\": \"Score improved due to on-time payments\",\n"
-            + "  \"additionalData\": {\n"
-            + "    \"updateNotes\": \"Manual adjustment after payment verification\",\n"
-            + "    \"verificationDetails\": {\n"
-            + "      \"verifiedBy\": \"John Doe\",\n"
-            + "      \"verificationDate\": \"2024-01-15\"\n"
-            + "    }\n"
-            + "  }\n"
-            + "}")
+            + "  \"reportSummary\": \"Updated after recent payment\",\n"
+            + "  \"reportNotes\": \"Score improved due to on-time payments\",\n" + "  \"additionalData\": {\n"
+            + "    \"updateNotes\": \"Manual adjustment after payment verification\",\n" + "    \"verificationDetails\": {\n"
+            + "      \"verifiedBy\": \"John Doe\",\n" + "      \"verificationDate\": \"2024-01-15\"\n" + "    }\n" + "  }\n" + "}")
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = Object.class)))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CommandProcessingResult.class))) })

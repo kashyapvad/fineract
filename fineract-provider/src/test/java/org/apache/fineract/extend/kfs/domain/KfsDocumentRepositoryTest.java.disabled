@@ -1,0 +1,170 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.fineract.extend.kfs.domain;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import org.apache.fineract.ServerApplication;
+import org.apache.fineract.extend.kfs.domain.KfsDocument;
+import org.apache.fineract.extend.kfs.domain.KfsDocumentRepository;
+import org.apache.fineract.infrastructure.core.domain.ActionContext;
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+@ExtendWith(SpringExtension.class)
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class KfsDocumentRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private KfsDocumentRepository kfsDocumentRepository;
+
+    private KfsDocument testDocument1;
+    private KfsDocument testDocument2;
+
+    @BeforeEach
+    void setUp() {
+        // Setup tenant context for testing
+        FineractPlatformTenant tenant = new FineractPlatformTenant(1L, "default", "Default", "Europe/Berlin", null);
+        ThreadLocalContextUtil.setTenant(tenant);
+        ThreadLocalContextUtil.setActionContext(ActionContext.DEFAULT);
+        
+        testDocument1 = new KfsDocument();
+        testDocument1.setJobId("KFS-JOB-001");
+        testDocument1.setLoanId(1L);
+        testDocument1.setTemplateId(1L);
+        testDocument1.setDocumentType("LOAN_AGREEMENT");
+        testDocument1.setStatus("COMPLETED");
+        testDocument1.setCreatedAt(LocalDateTime.now().minusDays(1));
+        testDocument1.setOutputFormat("PDF");
+
+        testDocument2 = new KfsDocument();
+        testDocument2.setJobId("KFS-JOB-002");
+        testDocument2.setLoanId(1L);
+        testDocument2.setTemplateId(2L);
+        testDocument2.setDocumentType("REPAYMENT_SCHEDULE");
+        testDocument2.setStatus("IN_PROGRESS");
+        testDocument2.setCreatedAt(LocalDateTime.now());
+        testDocument2.setOutputFormat("DOC");
+    }
+
+    @Test
+    void shouldSaveAndFindKfsDocument() {
+        // Given
+        KfsDocument savedDocument = entityManager.persistAndFlush(testDocument1);
+
+        // When
+        Optional<KfsDocument> found = kfsDocumentRepository.findById(savedDocument.getId());
+
+        // Then
+        assertTrue(found.isPresent());
+        KfsDocument document = found.get();
+        assertEquals(testDocument1.getJobId(), document.getJobId());
+        assertEquals(testDocument1.getLoanId(), document.getLoanId());
+        assertEquals(testDocument1.getDocumentType(), document.getDocumentType());
+        assertEquals(testDocument1.getStatus(), document.getStatus());
+    }
+
+    @Test
+    void shouldFindKfsDocumentByJobId() {
+        // Given
+        entityManager.persistAndFlush(testDocument1);
+
+        // When
+        Optional<KfsDocument> found = kfsDocumentRepository.findByJobId("KFS-JOB-001");
+
+        // Then
+        assertTrue(found.isPresent());
+        assertEquals("KFS-JOB-001", found.get().getJobId());
+        assertEquals("LOAN_AGREEMENT", found.get().getDocumentType());
+    }
+
+    @Test
+    void shouldFindKfsDocumentsByLoanIdOrderedByCreatedAtDesc() {
+        // Given
+        entityManager.persistAndFlush(testDocument1);
+        entityManager.persistAndFlush(testDocument2);
+
+        // When
+        List<KfsDocument> documents = kfsDocumentRepository.findByLoanIdOrderByCreatedAtDesc(1L);
+
+        // Then
+        assertNotNull(documents);
+        assertEquals(2, documents.size());
+        // Most recent first
+        assertEquals("KFS-JOB-002", documents.get(0).getJobId());
+        assertEquals("KFS-JOB-001", documents.get(1).getJobId());
+    }
+
+    @Test
+    void shouldCountKfsDocumentsByStatus() {
+        // Given
+        entityManager.persistAndFlush(testDocument1); // COMPLETED
+        entityManager.persistAndFlush(testDocument2); // IN_PROGRESS
+
+        // When
+        Long completedCount = kfsDocumentRepository.countByStatus("COMPLETED");
+        Long inProgressCount = kfsDocumentRepository.countByStatus("IN_PROGRESS");
+
+        // Then
+        assertEquals(1L, completedCount);
+        assertEquals(1L, inProgressCount);
+    }
+
+    @Test
+    void shouldFindKfsDocumentsByStatus() {
+        // Given
+        entityManager.persistAndFlush(testDocument1); // COMPLETED
+        entityManager.persistAndFlush(testDocument2); // IN_PROGRESS
+
+        // When
+        List<KfsDocument> completedDocs = kfsDocumentRepository.findByStatus("COMPLETED");
+        List<KfsDocument> inProgressDocs = kfsDocumentRepository.findByStatus("IN_PROGRESS");
+
+        // Then
+        assertEquals(1, completedDocs.size());
+        assertEquals("COMPLETED", completedDocs.get(0).getStatus());
+        
+        assertEquals(1, inProgressDocs.size());
+        assertEquals("IN_PROGRESS", inProgressDocs.get(0).getStatus());
+    }
+
+    @AfterEach
+    void tearDown() {
+        ThreadLocalContextUtil.reset();
+    }
+} 

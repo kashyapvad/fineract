@@ -19,17 +19,28 @@
 package org.apache.fineract.extend.creditbureau.domain;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.fineract.extend.converter.JsonAttributeConverter;
+import org.apache.fineract.extend.converter.PostgresJsonbConverter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -177,13 +188,13 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
     private List<ClientCreditScoreDetails> creditScores = new ArrayList<>();
 
     // Keep raw response for audit and debugging purposes
-    @Convert(converter = JsonAttributeConverter.class)
-    @Column(name = "raw_provider_response", columnDefinition = "JSON")
+    @Convert(converter = PostgresJsonbConverter.class)
+    @Column(name = "raw_provider_response", columnDefinition = "JSONB")
     private JsonNode rawProviderResponse;
 
     // Additional data field for manual entry and supplemental information
-    @Convert(converter = JsonAttributeConverter.class)
-    @Column(name = "additional_data", columnDefinition = "JSON")
+    @Convert(converter = PostgresJsonbConverter.class)
+    @Column(name = "additional_data", columnDefinition = "JSONB")
     private JsonNode additionalData;
 
     /**
@@ -194,7 +205,8 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
 
         return new ClientCreditReportDetails().setClient(client).setReportType(reportType).setReportStatus(CreditBureauReportStatus.SUCCESS)
                 .setCreditBureauProvider(creditBureauProvider).setProviderReportId(providerReportId).setRawProviderResponse(rawResponse)
-                .setRequestedOn(LocalDateTime.now()).setRequestedByUser(requestedByUser).setReportGeneratedOn(LocalDate.now());
+                .setRequestedOn(LocalDateTime.now(ZoneId.systemDefault())).setRequestedByUser(requestedByUser)
+                .setReportGeneratedOn(LocalDate.now(ZoneId.systemDefault()));
     }
 
     /**
@@ -205,7 +217,7 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
 
         return new ClientCreditReportDetails().setClient(client).setReportType(reportType).setReportStatus(CreditBureauReportStatus.FAILURE)
                 .setCreditBureauProvider(creditBureauProvider).setErrorCode(errorCode).setErrorMessage(errorMessage)
-                .setRequestedOn(LocalDateTime.now()).setRequestedByUser(requestedByUser);
+                .setRequestedOn(LocalDateTime.now(ZoneId.systemDefault())).setRequestedByUser(requestedByUser);
     }
 
     /**
@@ -215,8 +227,8 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
             String creditBureauProvider, String providerReportId, AppUser requestedByUser) {
 
         return new ClientCreditReportDetails().setClient(client).setReportType(reportType).setReportStatus(CreditBureauReportStatus.PENDING)
-                .setCreditBureauProvider(creditBureauProvider).setProviderReportId(providerReportId).setRequestedOn(LocalDateTime.now())
-                .setRequestedByUser(requestedByUser);
+                .setCreditBureauProvider(creditBureauProvider).setProviderReportId(providerReportId)
+                .setRequestedOn(LocalDateTime.now(ZoneId.systemDefault())).setRequestedByUser(requestedByUser);
     }
 
     /**
@@ -245,12 +257,12 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
     }
 
     /**
-     * Updates credit summary information from provider response.
-     * Only updates non-null values to allow partial updates without overwriting existing data.
+     * Updates credit summary information from provider response. Only updates non-null values to allow partial updates
+     * without overwriting existing data.
      */
     public void updateCreditSummary(Integer totalAccounts, Integer activeAccounts, Integer closedAccounts, Integer overdueAccounts,
             BigDecimal totalCreditLimit, BigDecimal totalOutstandingAmount, BigDecimal totalOverdueAmount, BigDecimal highestCreditAmount) {
-        
+
         // Only update account fields if they are not null
         if (totalAccounts != null) {
             this.totalAccounts = totalAccounts;
@@ -264,7 +276,7 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
         if (overdueAccounts != null) {
             this.overdueAccounts = overdueAccounts;
         }
-        
+
         // Only update financial fields if they are not null
         if (totalCreditLimit != null) {
             this.totalCreditLimit = totalCreditLimit;
@@ -355,7 +367,7 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
         this.reportStatus = CreditBureauReportStatus.FAILURE;
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
-        this.reportGeneratedOn = LocalDate.now();
+        this.reportGeneratedOn = LocalDate.now(ZoneId.systemDefault());
     }
 
     // Status Check Methods

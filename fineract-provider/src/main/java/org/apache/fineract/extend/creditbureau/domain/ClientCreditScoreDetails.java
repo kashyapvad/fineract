@@ -19,14 +19,22 @@
 package org.apache.fineract.extend.creditbureau.domain;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.fineract.extend.converter.JsonAttributeConverter;
+import org.apache.fineract.extend.converter.PostgresJsonbConverter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 
 /**
@@ -79,8 +87,8 @@ public class ClientCreditScoreDetails extends AbstractAuditableWithUTCDateTimeCu
     private BigDecimal scorePercentile;
 
     // Scoring Elements (factors that influenced the score)
-    @Convert(converter = JsonAttributeConverter.class)
-    @Column(name = "scoring_elements", columnDefinition = "JSON")
+    @Convert(converter = PostgresJsonbConverter.class)
+    @Column(name = "scoring_elements", columnDefinition = "JSONB")
     private JsonNode scoringElements;
 
     @Column(name = "score_reason", columnDefinition = "TEXT")
@@ -90,8 +98,12 @@ public class ClientCreditScoreDetails extends AbstractAuditableWithUTCDateTimeCu
     @Column(name = "provider_score_id", length = 255)
     private String providerScoreId;
 
-    @Convert(converter = JsonAttributeConverter.class)
-    @Column(name = "provider_metadata", columnDefinition = "JSON")
+    /**
+     * Provider-specific metadata about the scoring calculation. This can include confidence scores, model versions,
+     * bureau-specific flags, etc.
+     */
+    @Convert(converter = PostgresJsonbConverter.class)
+    @Column(name = "provider_metadata", columnDefinition = "JSONB")
     private JsonNode providerMetadata;
 
     /**
@@ -116,7 +128,7 @@ public class ClientCreditScoreDetails extends AbstractAuditableWithUTCDateTimeCu
         JsonNode scoringElements = scoreDetailsNode.path("scoringElements");
 
         return new ClientCreditScoreDetails().setCreditReport(creditReport).setScoreModel(scoreType).setScoreVersion(scoreVersion)
-                .setScoreName(scoreName).setCreditScore(scoreValue).setScoreDate(LocalDate.now())
+                .setScoreName(scoreName).setCreditScore(scoreValue).setScoreDate(LocalDate.now(ZoneId.systemDefault()))
                 .setScoringElements(scoringElements.isArray() ? scoringElements : null);
     }
 

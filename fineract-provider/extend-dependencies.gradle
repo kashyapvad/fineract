@@ -1,0 +1,57 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/**
+ * Extend Module Dependencies
+ *
+ * This file contains all dependencies specific to the extend module functionality.
+ * It is included in the main dependencies.gradle file to maintain fork-safety.
+ *
+ * When updating upstream Fineract, this file can be preserved while the main
+ * dependencies.gradle can be safely updated from upstream.
+ */
+
+// If docx4j is ever needed, use this configuration to help resolve the JAXB version conflict and classpath issues so that the project can be built without cucumber failures.
+// This is not needed for the project to be built with the current dependencies.
+
+// dependencies {
+//     // =============================================================================
+//     // EXTEND MODULE DEPENDENCIES
+//     // =============================================================================
+
+//     // docx4j for modern Word document processing with Content Controls
+//     implementation('org.docx4j:docx4j-JAXB-ReferenceImpl:11.5.3') {
+//         // Exclude the conflicting jakarta.activation implementation
+//         exclude group: 'com.sun.activation', module: 'jakarta.activation'
+//     }
+
+//     // Provide the JAXB runtime implementation that docx4j needs
+//     // These are required for docx4j to work properly
+//     implementation('org.glassfish.jaxb:jaxb-runtime:3.0.2') {
+//         // Exclude com.sun.activation to prevent conflicts
+//         exclude group: 'com.sun.activation', module: 'jakarta.activation'
+//     }
+
+//     // Ensure we're using the jakarta.activation-api that's already in the project
+//     // This prevents classpath duplicates while providing the necessary classes
+//     implementation 'jakarta.activation:jakarta.activation-api:2.1.3'
+// }
+// Cross-project fix for fineract-command compilation issues
+// This ensures fineract-command test compilation depends on its main compilation
+// Applied from extend module to avoid upstream changes
