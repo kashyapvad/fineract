@@ -61,10 +61,9 @@ public class CreditScoreData implements Serializable {
     /**
      * Constructor for creating credit score data.
      */
-    public CreditScoreData(String scoreModel, String scoreVersion, String scoreName, Integer creditScore, 
-                          LocalDate scoreDate, Integer scoreRangeMin, Integer scoreRangeMax, 
-                          BigDecimal scorePercentile, JsonNode scoringElements, String scoreReason,
-                          String providerScoreId, JsonNode providerMetadata) {
+    public CreditScoreData(String scoreModel, String scoreVersion, String scoreName, Integer creditScore, LocalDate scoreDate,
+            Integer scoreRangeMin, Integer scoreRangeMax, BigDecimal scorePercentile, JsonNode scoringElements, String scoreReason,
+            String providerScoreId, JsonNode providerMetadata) {
         this.scoreModel = scoreModel;
         this.scoreVersion = scoreVersion;
         this.scoreName = scoreName;
@@ -150,4 +149,4 @@ public class CreditScoreData implements Serializable {
     public boolean hasProviderMetadata() {
         return providerMetadata != null && !providerMetadata.isEmpty();
     }
-} 
+}

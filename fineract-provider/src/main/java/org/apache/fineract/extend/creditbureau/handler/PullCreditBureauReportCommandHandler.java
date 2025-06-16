@@ -24,8 +24,8 @@ import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.extend.creditbureau.service.ClientCreditBureauWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
-import org.springframework.stereotype.Service;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 /**
  * Command handler for pulling credit bureau reports from external providers.

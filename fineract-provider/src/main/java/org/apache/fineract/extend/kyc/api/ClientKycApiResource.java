@@ -50,6 +50,7 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.stereotype.Component;
+// ArrayList, Arrays, List, and Collectors imports removed since bulk endpoint moved to separate resource
 
 /**
  * REST API Resource for Client KYC verification operations.
@@ -95,6 +96,9 @@ public class ClientKycApiResource {
 
         return this.toApiJsonSerializer.serialize(settings, kycData);
     }
+
+    // Bulk endpoint moved to ClientKycBulkApiResource for proper path structure
+    // This avoids path conflicts and follows REST conventions
 
     @GET
     @Path("template")
@@ -260,4 +264,6 @@ public class ClientKycApiResource {
 
         return this.commandResultToApiJsonSerializer.serialize(result);
     }
+
+    // parseClientIds method moved to ClientKycBulkApiResource to avoid duplication
 }
