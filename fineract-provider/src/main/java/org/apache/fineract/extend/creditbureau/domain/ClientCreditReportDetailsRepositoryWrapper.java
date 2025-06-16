@@ -19,6 +19,7 @@
 package org.apache.fineract.extend.creditbureau.domain;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -143,7 +144,7 @@ public class ClientCreditReportDetailsRepositoryWrapper {
      * Checks if a recent successful report exists for client and provider.
      */
     public boolean hasRecentSuccessfulReport(final Long clientId, final String provider, final Integer withinDays) {
-        final LocalDate cutoffDate = LocalDate.now().minusDays(withinDays);
+        final LocalDate cutoffDate = LocalDate.now(ZoneId.systemDefault()).minusDays(withinDays);
         return this.repository.countRecentSuccessfulReports(clientId, provider, cutoffDate) > 0;
     }
 

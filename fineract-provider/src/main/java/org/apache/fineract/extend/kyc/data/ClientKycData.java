@@ -185,11 +185,21 @@ public class ClientKycData implements Serializable {
      */
     public int getVerifiedDocumentCount() {
         int count = 0;
-        if (Boolean.TRUE.equals(panVerified)) count++;
-        if (Boolean.TRUE.equals(aadhaarVerified)) count++;
-        if (Boolean.TRUE.equals(voterIdVerified)) count++;
-        if (Boolean.TRUE.equals(drivingLicenseVerified)) count++;
-        if (Boolean.TRUE.equals(passportVerified)) count++;
+        if (Boolean.TRUE.equals(panVerified)) {
+            count++;
+        }
+        if (Boolean.TRUE.equals(aadhaarVerified)) {
+            count++;
+        }
+        if (Boolean.TRUE.equals(voterIdVerified)) {
+            count++;
+        }
+        if (Boolean.TRUE.equals(drivingLicenseVerified)) {
+            count++;
+        }
+        if (Boolean.TRUE.equals(passportVerified)) {
+            count++;
+        }
         return count;
     }
 

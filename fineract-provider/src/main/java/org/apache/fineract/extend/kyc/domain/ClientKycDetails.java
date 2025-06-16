@@ -27,8 +27,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -36,7 +38,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.fineract.extend.converter.JsonAttributeConverter;
+import org.apache.fineract.extend.converter.PostgresJsonbConverter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -54,8 +56,8 @@ import org.apache.fineract.useradministration.domain.AppUser;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Long> {
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id", nullable = false)
+    @OneToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id", nullable = false, unique = true)
     private Client client;
 
     // KYC Document Fields
@@ -106,8 +108,8 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
     private AppUser verifiedByUser;
 
     // Provider-Agnostic Response Storage
-    @Convert(converter = JsonAttributeConverter.class)
-    @Column(name = "api_response_data", columnDefinition = "JSON")
+    @Convert(converter = PostgresJsonbConverter.class)
+    @Column(name = "api_response_data", columnDefinition = "JSONB")
     private JsonNode apiResponseData;
 
     @Column(name = "verification_notes", columnDefinition = "TEXT")
@@ -220,14 +222,17 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
      *            the user who initiated the verification
      * @param verificationResults
      *            map indicating which documents were verified
+     * @param notes
+     *            optional verification notes
      */
     public void markApiVerificationCompleted(String verificationProvider, JsonNode apiResponse, AppUser verifiedByUser,
-            Map<String, Boolean> verificationResults) {
+            Map<String, Boolean> verificationResults, String notes) {
         this.verificationMethod = KycVerificationMethod.API;
         this.verificationProvider = verificationProvider;
         this.apiResponseData = apiResponse;
         this.verifiedByUser = verifiedByUser;
-        this.lastVerifiedOn = LocalDate.now();
+        this.lastVerifiedOn = LocalDate.now(ZoneId.systemDefault());
+        this.verificationNotes = notes;
 
         // Update individual verification status based on results
         if (verificationResults.containsKey("panVerified")) {
@@ -260,7 +265,7 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
     public void markManualVerificationCompleted(AppUser verifiedByUser, Map<String, Boolean> verificationResults, String notes) {
         this.verificationMethod = KycVerificationMethod.MANUAL;
         this.verifiedByUser = verifiedByUser;
-        this.lastVerifiedOn = LocalDate.now();
+        this.lastVerifiedOn = LocalDate.now(ZoneId.systemDefault());
         this.verificationNotes = notes;
         this.verificationProvider = null; // Clear provider for manual verification
         this.apiResponseData = null; // Clear API response for manual verification
@@ -326,11 +331,21 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
      */
     public int getVerifiedDocumentCount() {
         int count = 0;
-        if (panVerified) count++;
-        if (aadhaarVerified) count++;
-        if (drivingLicenseVerified) count++;
-        if (voterIdVerified) count++;
-        if (passportVerified) count++;
+        if (panVerified) {
+            count++;
+        }
+        if (aadhaarVerified) {
+            count++;
+        }
+        if (drivingLicenseVerified) {
+            count++;
+        }
+        if (voterIdVerified) {
+            count++;
+        }
+        if (passportVerified) {
+            count++;
+        }
         return count;
     }
 

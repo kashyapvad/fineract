@@ -54,7 +54,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
     public Collection<ClientCreditBureauData> retrieveClientCreditReports(final Long clientId) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Validate client exists and belongs to current tenant
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
@@ -66,7 +66,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
             return creditReports.stream().map(this::mapToClientCreditBureauData).collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Error retrieving credit reports for client {}: {}", clientId, e.getMessage(), e);
+            log.error("Error retrieving credit reports for client {}", clientId, e);
             throw e;
         }
     }
@@ -76,7 +76,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
     public ClientCreditBureauData retrieveCreditReport(final Long clientId, final Long reportId) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
@@ -93,12 +93,10 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
             return mapToClientCreditBureauData(creditReport);
 
         } catch (Exception e) {
-            log.error("Error retrieving credit report {} for client {}: {}", reportId, clientId, e.getMessage(), e);
+            log.error("Error retrieving credit report {} for client {}", reportId, clientId, e);
             throw e;
         }
     }
-
-
 
     /**
      * Additional method: Retrieve credit reports by type.
@@ -107,7 +105,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
     public List<ClientCreditBureauData> retrieveCreditReportsByType(final Long clientId, final String reportTypeCode) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
@@ -123,7 +121,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
             return creditReports.stream().map(this::mapToClientCreditBureauData).collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Error retrieving credit reports by type {} for client {}: {}", reportTypeCode, clientId, e.getMessage(), e);
+            log.error("Error retrieving credit reports by type {} for client {}", reportTypeCode, clientId, e);
             throw e;
         }
     }
@@ -135,7 +133,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
     public List<ClientCreditBureauData> retrieveCreditReportsByProvider(final Long clientId, final String provider) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Validate client exists
             this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
@@ -148,7 +146,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
             return creditReports.stream().map(this::mapToClientCreditBureauData).collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Error retrieving credit reports by provider {} for client {}: {}", provider, clientId, e.getMessage(), e);
+            log.error("Error retrieving credit reports by provider {} for client {}", provider, clientId, e);
             throw e;
         }
     }
@@ -185,8 +183,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
         data.setCreditScoreDate(entity.getReportGeneratedOn());
 
         // Enhanced Credit Scores (detailed scores from separate table)
-        final List<CreditScoreData> creditScores = entity.getCreditScores().stream()
-                .map(this::mapToCreditScoreData)
+        final List<CreditScoreData> creditScores = entity.getCreditScores().stream().map(this::mapToCreditScoreData)
                 .collect(Collectors.toList());
         data.setCreditScores(creditScores);
 
@@ -250,19 +247,8 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
      * Maps ClientCreditScoreDetails entity to CreditScoreData DTO.
      */
     private CreditScoreData mapToCreditScoreData(final ClientCreditScoreDetails entity) {
-        return new CreditScoreData(
-            entity.getScoreModel(),
-            entity.getScoreVersion(),
-            entity.getScoreName(),
-            entity.getCreditScore(),
-            entity.getScoreDate(),
-            entity.getScoreRangeMin(),
-            entity.getScoreRangeMax(),
-            entity.getScorePercentile(),
-            entity.getScoringElements(),
-            entity.getScoreReason(),
-            entity.getProviderScoreId(),
-            entity.getProviderMetadata()
-        );
+        return new CreditScoreData(entity.getScoreModel(), entity.getScoreVersion(), entity.getScoreName(), entity.getCreditScore(),
+                entity.getScoreDate(), entity.getScoreRangeMin(), entity.getScoreRangeMax(), entity.getScorePercentile(),
+                entity.getScoringElements(), entity.getScoreReason(), entity.getProviderScoreId(), entity.getProviderMetadata());
     }
 }

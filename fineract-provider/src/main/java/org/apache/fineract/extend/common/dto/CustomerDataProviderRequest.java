@@ -40,6 +40,7 @@ public class CustomerDataProviderRequest implements Serializable {
     private Long clientId;
     private String customerName;
     private String mobileNumber;
+    private String gender;
     private String documentType;
     private String documentNumber;
     private java.util.Map<String, Object> additionalParameters;

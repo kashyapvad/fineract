@@ -22,8 +22,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,12 +38,12 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.fineract.extend.common.dto.CreditBureauProviderRequest;
 import org.apache.fineract.extend.common.dto.CreditBureauProviderResponse;
 import org.apache.fineract.extend.common.service.ExtendProviderService;
-import org.apache.fineract.extend.creditbureau.exception.ClientCreditBureauNotFoundException;
 import org.apache.fineract.extend.creditbureau.domain.ClientCreditReportDetails;
 import org.apache.fineract.extend.creditbureau.domain.ClientCreditReportDetailsRepositoryWrapper;
 import org.apache.fineract.extend.creditbureau.domain.ClientCreditScoreDetails;
 import org.apache.fineract.extend.creditbureau.domain.ClientCreditScoreDetailsRepository;
 import org.apache.fineract.extend.creditbureau.domain.CreditBureauReportType;
+import org.apache.fineract.extend.creditbureau.exception.ClientCreditBureauNotFoundException;
 import org.apache.fineract.extend.creditbureau.validation.PullCreditReportRequestValidator;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -55,7 +57,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import jakarta.persistence.PersistenceException;
 
 /**
  * Implementation of ClientCreditBureauWritePlatformService.
@@ -82,7 +83,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     public CommandProcessingResult pullCreditReport(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Validate provider availability using common service
             this.extendProviderService.validateProviderAvailable();
@@ -117,8 +118,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             try {
                 // Build provider-agnostic request using common service
                 final CreditBureauProviderRequest providerRequest = CreditBureauProviderRequest.builder()
-                        .referenceId(this.extendProviderService.createReferenceId("CREDIT_REPORT", clientId)).consent(true).clientId(clientId)
-                        .customerName(client.getDisplayName()).mobileNumber(client.mobileNo()).reportType("FULL_REPORT").build();
+                        .referenceId(this.extendProviderService.createReferenceId("CREDIT_REPORT", clientId)).consent(true)
+                        .clientId(clientId).customerName(client.getDisplayName()).mobileNumber(client.mobileNo()).reportType("FULL_REPORT")
+                        .build();
 
                 // Call provider-agnostic API to generate credit report using common service
                 final CreditBureauProviderResponse providerResponse = this.extendProviderService.generateCreditReport(providerRequest);
@@ -133,7 +135,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 final String reportSummary = providerResponse.getReportSummary();
                 final LocalDate reportGeneratedOn = providerResponse.getReportGeneratedOn() != null
                         ? providerResponse.getReportGeneratedOn()
-                        : LocalDate.now();
+                        : LocalDate.now(ZoneId.systemDefault());
 
                 // Update report as successful with basic metadata
                 savedDetails.markAsSuccessful(reportData, reportGeneratedOn);
@@ -161,7 +163,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 savedDetails.markAsFailed("API_ERROR", apiException.getMessage());
                 this.creditReportRepositoryWrapper.save(savedDetails);
 
-                log.error("Failed to pull credit report for client {}: {}", clientId, apiException.getMessage());
+                log.error("Failed to pull credit report for client {}", clientId, apiException);
                 throw new RuntimeException("Failed to pull credit report: " + apiException.getMessage(), apiException);
             }
 
@@ -170,7 +172,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     .withClientId(clientId).build();
 
         } catch (Exception e) {
-            log.error("Error processing credit report pull command: {}", e.getMessage(), e);
+            log.error("Error processing credit report pull command", e);
             throw e;
         }
     }
@@ -180,7 +182,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     public CommandProcessingResult deleteCreditReport(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Extract parameters
             final Long clientId = command.getClientId();
@@ -199,21 +201,22 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             }
 
             // AUDIT TRAIL: Capture state before deletion for compliance tracking
-            final String deletedState = String.format("Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s|CreatedDate:%s|ScoreCount:%s", 
-                creditReportDetails.getCreditBureauProvider(), creditReportDetails.getReportType(),
-                creditReportDetails.getReportStatus(), creditReportDetails.getPrimaryCreditScore(),
-                creditReportDetails.getPrimaryCreditRating(), creditReportDetails.getCustomerName(),
-                creditReportDetails.getTotalAccounts(), creditReportDetails.getActiveAccounts(),
-                creditReportDetails.getTotalCreditLimit(), creditReportDetails.getTotalOutstandingAmount(),
-                creditReportDetails.getReportSummary(), creditReportDetails.getCreatedDate().orElse(null),
-                creditReportDetails.getCreditScores().size());
+            final String deletedState = String.format(
+                    "Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s|CreatedDate:%s|ScoreCount:%s",
+                    creditReportDetails.getCreditBureauProvider(), creditReportDetails.getReportType(),
+                    creditReportDetails.getReportStatus(), creditReportDetails.getPrimaryCreditScore(),
+                    creditReportDetails.getPrimaryCreditRating(), creditReportDetails.getCustomerName(),
+                    creditReportDetails.getTotalAccounts(), creditReportDetails.getActiveAccounts(),
+                    creditReportDetails.getTotalCreditLimit(), creditReportDetails.getTotalOutstandingAmount(),
+                    creditReportDetails.getReportSummary(), creditReportDetails.getCreatedDate().orElse(null),
+                    creditReportDetails.getCreditScores().size());
 
             // Delete the credit report record (cascades to credit scores)
             this.creditReportRepositoryWrapper.deleteById(reportId);
 
             // AUDIT TRAIL: Log the deletion operation with complete record state for compliance
-            log.info("AUDIT: CREDIT REPORT DELETE - User: {} | Client: {} | Report ID: {} | Command: {} | Deleted Record: [{}]", 
-                currentUser.getId(), clientId, reportId, command.commandId(), deletedState);
+            log.info("AUDIT: CREDIT REPORT DELETE - User: {} | Client: {} | Report ID: {} | Command: {} | Deleted Record: [{}]",
+                    currentUser.getId(), clientId, reportId, command.commandId(), deletedState);
 
             log.info("Successfully deleted credit report {} for client {}", reportId, clientId);
 
@@ -221,7 +224,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     .build();
 
         } catch (Exception e) {
-            log.error("Error processing credit report deletion command: {}", e.getMessage(), e);
+            log.error("Error processing credit report deletion command", e);
             throw e;
         }
     }
@@ -231,7 +234,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     public CommandProcessingResult createCreditReport(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -268,16 +271,16 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
 
             // Process manual data input
             this.updateCustomerInformationFromCommand(creditReportDetails, command);
-            
+
             // Update credit summary if provided
             this.updateCreditSummaryFromCommand(creditReportDetails, command);
-            
+
             // Update financial information if provided
             this.updateFinancialInformationFromCommand(creditReportDetails, command);
-            
+
             // Update delinquency information if provided
             this.updateDelinquencyInformationFromCommand(creditReportDetails, command);
-            
+
             // Update enquiry information if provided
             this.updateEnquiryInformationFromCommand(creditReportDetails, command);
 
@@ -293,18 +296,18 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     .withClientId(clientId).build();
 
         } catch (final DataIntegrityViolationException dve) {
-            log.error("Data integrity violation in createCreditReport: {}", dve.getMessage(), dve);
+            log.error("Data integrity violation in createCreditReport", dve);
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException dve) {
-            log.error("JPA exception in createCreditReport: {}", dve.getMessage(), dve);
+            log.error("JPA exception in createCreditReport", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         } catch (final PersistenceException dve) {
-            log.error("Persistence exception in createCreditReport: {}", dve.getMessage(), dve);
+            log.error("Persistence exception in createCreditReport", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         } catch (Exception e) {
-            log.error("Error processing manual credit report creation: {}", e.getMessage(), e);
+            log.error("Error processing manual credit report creation", e);
             throw e;
         }
     }
@@ -314,7 +317,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     public CommandProcessingResult updateCreditReport(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Extract parameters
             final Long clientId = command.getClientId();
@@ -333,13 +336,14 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             }
 
             // AUDIT TRAIL: Capture original state for compliance tracking
-            final String originalState = String.format("Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s", 
-                creditReportDetails.getCreditBureauProvider(), creditReportDetails.getReportType(),
-                creditReportDetails.getReportStatus(), creditReportDetails.getPrimaryCreditScore(),
-                creditReportDetails.getPrimaryCreditRating(), creditReportDetails.getCustomerName(),
-                creditReportDetails.getTotalAccounts(), creditReportDetails.getActiveAccounts(),
-                creditReportDetails.getTotalCreditLimit(), creditReportDetails.getTotalOutstandingAmount(),
-                creditReportDetails.getReportSummary());
+            final String originalState = String.format(
+                    "Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s",
+                    creditReportDetails.getCreditBureauProvider(), creditReportDetails.getReportType(),
+                    creditReportDetails.getReportStatus(), creditReportDetails.getPrimaryCreditScore(),
+                    creditReportDetails.getPrimaryCreditRating(), creditReportDetails.getCustomerName(),
+                    creditReportDetails.getTotalAccounts(), creditReportDetails.getActiveAccounts(),
+                    creditReportDetails.getTotalCreditLimit(), creditReportDetails.getTotalOutstandingAmount(),
+                    creditReportDetails.getReportSummary());
 
             // Update customer information if provided
             updateCustomerInformationFromCommand(creditReportDetails, command);
@@ -373,16 +377,15 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             final ClientCreditReportDetails savedDetails = this.creditReportRepositoryWrapper.save(creditReportDetails);
 
             // AUDIT TRAIL: Log the update operation with before/after state for compliance
-            final String newState = String.format("Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s", 
-                savedDetails.getCreditBureauProvider(), savedDetails.getReportType(),
-                savedDetails.getReportStatus(), savedDetails.getPrimaryCreditScore(),
-                savedDetails.getPrimaryCreditRating(), savedDetails.getCustomerName(),
-                savedDetails.getTotalAccounts(), savedDetails.getActiveAccounts(),
-                savedDetails.getTotalCreditLimit(), savedDetails.getTotalOutstandingAmount(),
-                savedDetails.getReportSummary());
-            
-            log.info("AUDIT: CREDIT REPORT UPDATE - User: {} | Client: {} | Report ID: {} | Command: {} | Original: [{}] | Updated: [{}]", 
-                currentUser.getId(), clientId, reportId, command.commandId(), originalState, newState);
+            final String newState = String.format(
+                    "Provider:%s|ReportType:%s|Status:%s|Score:%s|Rating:%s|Customer:%s|TotalAccounts:%s|ActiveAccounts:%s|TotalCreditLimit:%s|TotalOutstanding:%s|Summary:%s",
+                    savedDetails.getCreditBureauProvider(), savedDetails.getReportType(), savedDetails.getReportStatus(),
+                    savedDetails.getPrimaryCreditScore(), savedDetails.getPrimaryCreditRating(), savedDetails.getCustomerName(),
+                    savedDetails.getTotalAccounts(), savedDetails.getActiveAccounts(), savedDetails.getTotalCreditLimit(),
+                    savedDetails.getTotalOutstandingAmount(), savedDetails.getReportSummary());
+
+            log.info("AUDIT: CREDIT REPORT UPDATE - User: {} | Client: {} | Report ID: {} | Command: {} | Original: [{}] | Updated: [{}]",
+                    currentUser.getId(), clientId, reportId, command.commandId(), originalState, newState);
 
             log.info("Successfully updated credit report {} for client {}", reportId, clientId);
 
@@ -390,18 +393,18 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     .build();
 
         } catch (final DataIntegrityViolationException dve) {
-            log.error("Data integrity violation in updateCreditReport: {}", dve.getMessage(), dve);
+            log.error("Data integrity violation in updateCreditReport", dve);
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException dve) {
-            log.error("JPA exception in updateCreditReport: {}", dve.getMessage(), dve);
+            log.error("JPA exception in updateCreditReport", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         } catch (final PersistenceException dve) {
-            log.error("Persistence exception in updateCreditReport: {}", dve.getMessage(), dve);
+            log.error("Persistence exception in updateCreditReport", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         } catch (Exception e) {
-            log.error("Error processing credit report update: {}", e.getMessage(), e);
+            log.error("Error processing credit report update", e);
             throw e;
         }
     }
@@ -412,7 +415,6 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      */
     private void extractAndSaveMultipleCreditScores(ClientCreditReportDetails creditReport, JsonNode reportData) {
         if (reportData == null || !reportData.has("data")) {
-            
             return;
         }
 
@@ -422,13 +424,11 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
         if (data.has("scoreDetails") && data.get("scoreDetails").isArray()) {
             final JsonNode scoreDetailsArray = data.get("scoreDetails");
 
-            
-
             for (JsonNode scoreDetail : scoreDetailsArray) {
                 try {
                     final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport,
                             scoreDetail.path("type").asText("UNKNOWN"), scoreDetail.path("version").asText("1.0"),
-                            scoreDetail.path("name").asText(), scoreDetail.path("value").asInt(), LocalDate.now());
+                            scoreDetail.path("name").asText(), scoreDetail.path("value").asInt(), LocalDate.now(ZoneId.systemDefault()));
 
                     // Add scoring elements if available
                     if (scoreDetail.has("scoringElements") && scoreDetail.get("scoringElements").isArray()) {
@@ -449,7 +449,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             final String rating = data.has("creditRating") ? data.get("creditRating").asText() : null;
 
             final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport, "GENERAL", "1.0",
-                    "General Credit Score", score, LocalDate.now());
+                    "General Credit Score", score, LocalDate.now(ZoneId.systemDefault()));
 
             if (rating != null) {
                 scoreDetails.setScoreReason(rating);
@@ -457,7 +457,6 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
 
             creditReport.addCreditScore(scoreDetails);
 
-            
         }
 
         // Recalculate primary score after adding all scores
@@ -470,7 +469,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract customer information from API response.
      */
     private void extractAndUpdateCustomerInformation(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -487,7 +488,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             try {
                 dateOfBirth = LocalDate.parse(data.get("dateOfBirth").asText());
             } catch (Exception e) {
-                
+                log.warn("Failed to parse date of birth from report data: {}", data.get("dateOfBirth").asText(), e);
             }
         }
 
@@ -499,7 +500,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract credit summary from API response.
      */
     private void extractAndUpdateCreditSummary(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -515,7 +518,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract financial information from API response.
      */
     private void extractAndUpdateFinancialInformation(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -532,7 +537,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract delinquency information from API response.
      */
     private void extractAndUpdateDelinquencyInformation(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -547,7 +554,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract enquiry information from API response.
      */
     private void extractAndUpdateEnquiryInformation(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -585,8 +594,8 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     command.hasParameter("totalAccounts") ? command.integerValueOfParameterNamed("totalAccounts") : null,
                     command.hasParameter("activeAccounts") ? command.integerValueOfParameterNamed("activeAccounts") : null,
                     command.hasParameter("closedAccounts") ? command.integerValueOfParameterNamed("closedAccounts") : null,
-                    command.hasParameter("overdueAccounts") ? command.integerValueOfParameterNamed("overdueAccounts") : null, 
-                    null, null, null, null);
+                    command.hasParameter("overdueAccounts") ? command.integerValueOfParameterNamed("overdueAccounts") : null, null, null,
+                    null, null);
         }
     }
 
@@ -598,9 +607,10 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 || command.hasParameter("totalOverdueAmount") || command.hasParameter("highestCreditAmount")) {
 
             // Use bigDecimalValueOfParameterNamed to preserve 0 values instead of converting them to null
-            creditReport.updateCreditSummary(null, null, null, null, 
+            creditReport.updateCreditSummary(null, null, null, null,
                     command.hasParameter("totalCreditLimit") ? command.bigDecimalValueOfParameterNamed("totalCreditLimit") : null,
-                    command.hasParameter("totalOutstandingAmount") ? command.bigDecimalValueOfParameterNamed("totalOutstandingAmount") : null,
+                    command.hasParameter("totalOutstandingAmount") ? command.bigDecimalValueOfParameterNamed("totalOutstandingAmount")
+                            : null,
                     command.hasParameter("totalOverdueAmount") ? command.bigDecimalValueOfParameterNamed("totalOverdueAmount") : null,
                     command.hasParameter("highestCreditAmount") ? command.bigDecimalValueOfParameterNamed("highestCreditAmount") : null);
         }
@@ -610,14 +620,13 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Update delinquency information from manual command.
      */
     private void updateDelinquencyInformationFromCommand(ClientCreditReportDetails creditReport, JsonCommand command) {
-        if (command.hasParameter("daysPastDue") || command.hasParameter("worstStatus12Months") 
+        if (command.hasParameter("daysPastDue") || command.hasParameter("worstStatus12Months")
                 || command.hasParameter("worstStatus24Months")) {
 
             // Use integerValueOfParameterNamed to preserve 0 values for daysPastDue
             creditReport.updateDelinquencyInformation(
                     command.hasParameter("daysPastDue") ? command.integerValueOfParameterNamed("daysPastDue") : null,
-                    command.stringValueOfParameterNamed("worstStatus12Months"),
-                    command.stringValueOfParameterNamed("worstStatus24Months"));
+                    command.stringValueOfParameterNamed("worstStatus12Months"), command.stringValueOfParameterNamed("worstStatus24Months"));
         }
     }
 
@@ -625,7 +634,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Update enquiry information from manual command.
      */
     private void updateEnquiryInformationFromCommand(ClientCreditReportDetails creditReport, JsonCommand command) {
-        if (command.hasParameter("enquiriesLast30Days") || command.hasParameter("enquiriesLast90Days") 
+        if (command.hasParameter("enquiriesLast30Days") || command.hasParameter("enquiriesLast90Days")
                 || command.hasParameter("enquiriesLast12Months")) {
 
             // Use integerValueOfParameterNamed to preserve 0 values for enquiry fields
@@ -637,34 +646,34 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     }
 
     /**
-     * Create credit scores from command - supports both single score (backward compatibility) and multiple scores array.
-     * Following Java Backend KB: Service method patterns with proper validation
+     * Create credit scores from command - supports both single score (backward compatibility) and multiple scores
+     * array. Following Java Backend KB: Service method patterns with proper validation
      */
     private void createCreditScoresFromCommand(ClientCreditReportDetails creditReport, JsonCommand command) {
         // Check for multiple scores array (new format)
         if (command.hasParameter("creditScores") && command.arrayOfParameterNamed("creditScores") != null) {
             final JsonArray scoresArray = command.arrayOfParameterNamed("creditScores");
-            
+
             log.info("Processing {} credit scores for report {}", scoresArray.size(), creditReport.getId());
-            
+
             for (int i = 0; i < scoresArray.size(); i++) {
                 final JsonObject scoreObject = scoresArray.get(i).getAsJsonObject();
-                
+
                 try {
                     String scoreModel = scoreObject.has("scoreModel") ? scoreObject.get("scoreModel").getAsString() : "MANUAL";
                     String scoreVersion = scoreObject.has("scoreVersion") ? scoreObject.get("scoreVersion").getAsString() : "1.0";
                     String scoreName = scoreObject.has("scoreName") ? scoreObject.get("scoreName").getAsString() : "Manual Entry";
                     Integer creditScore = scoreObject.has("creditScore") ? scoreObject.get("creditScore").getAsInt() : null;
                     String scoreReason = scoreObject.has("scoreReason") ? scoreObject.get("scoreReason").getAsString() : null;
-                    
+
                     if (creditScore != null) {
-                        final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(
-                            creditReport, scoreModel, scoreVersion, scoreName, creditScore, LocalDate.now());
-                        
+                        final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport, scoreModel,
+                                scoreVersion, scoreName, creditScore, LocalDate.now(ZoneId.systemDefault()));
+
                         if (scoreReason != null) {
                             scoreDetails.setScoreReason(scoreReason);
                         }
-                        
+
                         creditReport.addCreditScore(scoreDetails);
                     }
                 } catch (Exception e) {
@@ -677,10 +686,11 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             String scoreModel = command.hasParameter("scoreModel") ? command.stringValueOfParameterNamed("scoreModel") : "MANUAL";
             String scoreVersion = command.hasParameter("scoreVersion") ? command.stringValueOfParameterNamed("scoreVersion") : "1.0";
             String scoreName = command.hasParameter("scoreName") ? command.stringValueOfParameterNamed("scoreName") : "Manual Entry";
-            LocalDate scoreDate = command.hasParameter("scoreDate") ? command.localDateValueOfParameterNamed("scoreDate") : LocalDate.now();
+            LocalDate scoreDate = command.hasParameter("scoreDate") ? command.localDateValueOfParameterNamed("scoreDate")
+                    : LocalDate.now(ZoneId.systemDefault());
 
-            final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(
-                creditReport, scoreModel, scoreVersion, scoreName, command.integerValueOfParameterNamedDefaultToNullIfZero("creditScore"), scoreDate);
+            final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport, scoreModel, scoreVersion,
+                    scoreName, command.integerValueOfParameterNamedDefaultToNullIfZero("creditScore"), scoreDate);
 
             if (command.hasParameter("scoreReason")) {
                 scoreDetails.setScoreReason(command.stringValueOfParameterNamed("scoreReason"));
@@ -691,69 +701,69 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
     }
 
     /**
-     * Update credit scores from command - supports multiple scores
-     * Following Database KB: Proper transaction management and constraint handling
+     * Update credit scores from command - supports multiple scores Following Database KB: Proper transaction management
+     * and constraint handling
      */
     private void updateCreditScoresFromCommand(ClientCreditReportDetails creditReport, JsonCommand command) {
         // Check for multiple scores array (new format)
         if (command.hasParameter("creditScores") && command.arrayOfParameterNamed("creditScores") != null) {
             final JsonArray scoresArray = command.arrayOfParameterNamed("creditScores");
-            
+
             log.info("Updating {} credit scores for report {}", scoresArray.size(), creditReport.getId());
-            
+
             // Get existing credit scores mapped by scoreModel for efficient lookup
             Map<String, ClientCreditScoreDetails> existingScoresByModel = new HashMap<>();
             for (ClientCreditScoreDetails existingScore : creditReport.getCreditScores()) {
                 existingScoresByModel.put(existingScore.getScoreModel(), existingScore);
             }
             log.info("Found {} existing credit scores for report {}", existingScoresByModel.size(), creditReport.getId());
-            
+
             // Track which score models are in the new request
             Set<String> requestedScoreModels = new HashSet<>();
-            
+
             // Process each score in the request
             for (int i = 0; i < scoresArray.size(); i++) {
                 final JsonObject scoreObject = scoresArray.get(i).getAsJsonObject();
-                
+
                 try {
                     String scoreModel = scoreObject.has("scoreModel") ? scoreObject.get("scoreModel").getAsString() : "MANUAL";
                     String scoreVersion = scoreObject.has("scoreVersion") ? scoreObject.get("scoreVersion").getAsString() : "1.0";
                     String scoreName = scoreObject.has("scoreName") ? scoreObject.get("scoreName").getAsString() : "Manual Entry";
                     Integer creditScore = scoreObject.has("creditScore") ? scoreObject.get("creditScore").getAsInt() : null;
                     String scoreReason = scoreObject.has("scoreReason") ? scoreObject.get("scoreReason").getAsString() : null;
-                    
-                    log.info("PROCESSING score {}: model={}, version={}, name={}, score={}", 
-                        i, scoreModel, scoreVersion, scoreName, creditScore);
-                    
+
+                    log.info("PROCESSING score {}: model={}, version={}, name={}, score={}", i, scoreModel, scoreVersion, scoreName,
+                            creditScore);
+
                     if (creditScore != null) {
                         requestedScoreModels.add(scoreModel);
-                        
+
                         // Check if this score model already exists
                         ClientCreditScoreDetails existingScore = existingScoresByModel.get(scoreModel);
-                        
+
                         if (existingScore != null) {
                             // UPDATE existing score
-                            log.info("UPDATING existing score for model={}, old score={}, new score={}", 
-                                scoreModel, existingScore.getCreditScore(), creditScore);
-                            
+                            log.info("UPDATING existing score for model={}, old score={}, new score={}", scoreModel,
+                                    existingScore.getCreditScore(), creditScore);
+
                             existingScore.setCreditScore(creditScore);
                             existingScore.setScoreVersion(scoreVersion);
                             existingScore.setScoreName(scoreName);
                             existingScore.setScoreReason(scoreReason);
-                            existingScore.setScoreDate(LocalDate.now());
-                            
+                            existingScore.setScoreDate(LocalDate.now(ZoneId.systemDefault()));
+
                             log.info("UPDATED existing score for model={}", scoreModel);
                         } else {
                             // ADD new score
                             log.info("ADDING new score for model={}, score={}", scoreModel, creditScore);
-                            
-                            final ClientCreditScoreDetails newScoreDetails = ClientCreditScoreDetails.createScore(
-                                creditReport, scoreModel, scoreVersion, scoreName, creditScore, LocalDate.now());
-                            
+
+                            final ClientCreditScoreDetails newScoreDetails = ClientCreditScoreDetails.createScore(creditReport, scoreModel,
+                                    scoreVersion, scoreName, creditScore, LocalDate.now(ZoneId.systemDefault()));
+
                             if (scoreReason != null) {
                                 newScoreDetails.setScoreReason(scoreReason);
                             }
-                            
+
                             creditReport.addCreditScore(newScoreDetails);
                             log.info("ADDED new score for model={}", scoreModel);
                         }
@@ -764,39 +774,40 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     log.warn("Failed to process credit score at index {}: {}", i, e.getMessage());
                 }
             }
-            
+
             // REMOVE scores that are no longer in the request
             List<ClientCreditScoreDetails> scoresToRemove = new ArrayList<>();
-            for (String existingModel : existingScoresByModel.keySet()) {
-                if (!requestedScoreModels.contains(existingModel)) {
-                    ClientCreditScoreDetails scoreToRemove = existingScoresByModel.get(existingModel);
+            for (Map.Entry<String, ClientCreditScoreDetails> entry : existingScoresByModel.entrySet()) {
+                if (!requestedScoreModels.contains(entry.getKey())) {
+                    ClientCreditScoreDetails scoreToRemove = entry.getValue();
                     scoresToRemove.add(scoreToRemove);
-                    log.info("MARKING for removal: score model={} (no longer in request)", existingModel);
+                    log.info("MARKING for removal: score model={} (no longer in request)", entry.getKey());
                 }
             }
-            
+
             // Remove obsolete scores
             for (ClientCreditScoreDetails scoreToRemove : scoresToRemove) {
                 log.info("REMOVING obsolete score for model={}", scoreToRemove.getScoreModel());
                 creditReport.getCreditScores().remove(scoreToRemove);
             }
-            
+
             // Recalculate primary score after updating all scores
             log.info("RECALCULATING primary score for report {}", creditReport.getId());
             creditReport.recalculatePrimaryScore();
-            log.info("COMPLETED credit score update for report {} - {} scores processed, {} removed", 
-                creditReport.getId(), requestedScoreModels.size(), scoresToRemove.size());
+            log.info("COMPLETED credit score update for report {} - {} scores processed, {} removed", creditReport.getId(),
+                    requestedScoreModels.size(), scoresToRemove.size());
         }
         // Fallback to single score format (backward compatibility)
         else if (command.hasParameter("creditScore")) {
             String scoreModel = command.hasParameter("scoreModel") ? command.stringValueOfParameterNamed("scoreModel") : "MANUAL";
             String scoreVersion = command.hasParameter("scoreVersion") ? command.stringValueOfParameterNamed("scoreVersion") : "1.0";
             String scoreName = command.hasParameter("scoreName") ? command.stringValueOfParameterNamed("scoreName") : "Manual Entry";
-            LocalDate scoreDate = command.hasParameter("scoreDate") ? command.localDateValueOfParameterNamed("scoreDate") : LocalDate.now();
+            LocalDate scoreDate = command.hasParameter("scoreDate") ? command.localDateValueOfParameterNamed("scoreDate")
+                    : LocalDate.now(ZoneId.systemDefault());
             Integer creditScore = command.integerValueOfParameterNamedDefaultToNullIfZero("creditScore");
 
             log.info("SINGLE SCORE UPDATE: Processing single score for model={}, score={}", scoreModel, creditScore);
-            
+
             // For single score update, find existing score with same model or create new one
             ClientCreditScoreDetails existingScore = null;
             for (ClientCreditScoreDetails score : creditReport.getCreditScores()) {
@@ -805,7 +816,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     break;
                 }
             }
-            
+
             if (existingScore != null) {
                 // Update existing score
                 log.info("UPDATING existing single score for model={}", scoreModel);
@@ -813,15 +824,15 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 existingScore.setScoreVersion(scoreVersion);
                 existingScore.setScoreName(scoreName);
                 existingScore.setScoreDate(scoreDate);
-                
+
                 if (command.hasParameter("scoreReason")) {
                     existingScore.setScoreReason(command.stringValueOfParameterNamed("scoreReason"));
                 }
             } else {
                 // Add new score
                 log.info("ADDING new single score for model={}", scoreModel);
-                final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(
-                    creditReport, scoreModel, scoreVersion, scoreName, creditScore, scoreDate);
+                final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport, scoreModel, scoreVersion,
+                        scoreName, creditScore, scoreDate);
 
                 if (command.hasParameter("scoreReason")) {
                     scoreDetails.setScoreReason(command.stringValueOfParameterNamed("scoreReason"));
@@ -829,7 +840,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
 
                 creditReport.addCreditScore(scoreDetails);
             }
-            
+
             creditReport.recalculatePrimaryScore();
             log.info("COMPLETED single score update for model={}", scoreModel);
         }
@@ -844,7 +855,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 // Get the additional data as a string and parse it as JSON
                 final String additionalDataString = command.stringValueOfParameterNamed("additionalData");
                 log.info("PROCESSING additional data: {}", additionalDataString);
-                
+
                 if (additionalDataString != null && !additionalDataString.trim().isEmpty()) {
                     // Parse the JSON string into a JsonNode
                     final JsonNode additionalDataNode = this.objectMapper.readTree(additionalDataString);
@@ -855,39 +866,38 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     creditReport.setAdditionalDataFromJson(null);
                 }
             } catch (Exception e) {
-                log.error("Failed to process additional data for credit report {}: {}", creditReport.getId(), e.getMessage(), e);
+                log.error("Failed to process additional data for credit report {}", creditReport.getId(), e);
                 // Don't fail the entire update if additional data parsing fails
             }
         }
     }
 
     /**
-     * Handle data integrity issues following Fineract patterns
-     * This method converts database constraint violations into user-friendly error messages
+     * Handle data integrity issues following Fineract patterns This method converts database constraint violations into
+     * user-friendly error messages
      */
     private RuntimeException handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
         final String mostSpecificMessage = realCause.getMessage().toLowerCase();
-        
+
         // Handle duplicate credit score constraint
-        if (mostSpecificMessage.contains("uk_extend_credit_score_report_model") || 
-            mostSpecificMessage.contains("duplicate entry") && mostSpecificMessage.contains("credit_report_id")) {
-            
+        if (mostSpecificMessage.contains("uk_extend_credit_score_report_model")
+                || (mostSpecificMessage.contains("duplicate entry") && mostSpecificMessage.contains("credit_report_id"))) {
+
             final String defaultMessage = "A credit score with this model already exists for this report. Please use a different score model or update the existing score.";
-            return new PlatformDataIntegrityException("error.msg.credit.score.duplicate.model", 
-                defaultMessage, "scoreModel", "Duplicate credit score model for this report");
+            return new PlatformDataIntegrityException("error.msg.credit.score.duplicate.model", defaultMessage, "scoreModel",
+                    "Duplicate credit score model for this report");
         }
-        
+
         // Handle other potential constraints
         if (mostSpecificMessage.contains("fk_extend_credit_score_report")) {
             final String defaultMessage = "Credit score cannot be saved because the associated credit report does not exist.";
-            return new PlatformDataIntegrityException("error.msg.credit.score.invalid.report", 
-                defaultMessage, "creditReportId", "Invalid credit report reference");
+            return new PlatformDataIntegrityException("error.msg.credit.score.invalid.report", defaultMessage, "creditReportId",
+                    "Invalid credit report reference");
         }
-        
+
         // Generic data integrity error
         log.error("Unhandled data integrity issue: {}", realCause.getMessage());
         final String defaultMessage = "Data integrity constraint violation: " + realCause.getMessage();
-        return new PlatformDataIntegrityException("error.msg.data.integrity.issue", 
-            defaultMessage, "data", realCause.getMessage());
+        return new PlatformDataIntegrityException("error.msg.data.integrity.issue", defaultMessage, "data", realCause.getMessage());
     }
 }

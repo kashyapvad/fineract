@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="9004-1" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="m_extend_kfs_template"/>
+            </not>
+        </preConditions>
+        <createTable tableName="m_extend_kfs_template">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="template_name" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="template_version" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="template_description" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="template_file_path" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="template_fields_config" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="template_content" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="is_active_version" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_template_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="template_type" type="VARCHAR(100)" defaultValue="KFS_STANDARD">
+                <constraints nullable="false"/>
+            </column>
+            <column name="supported_loan_products" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="regulatory_compliance" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_on_utc" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_modified_by" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_modified_on_utc" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="9004-2" author="fineract">
+        <addForeignKeyConstraint
+            baseTableName="m_extend_kfs_template"
+            baseColumnNames="parent_template_id"
+            referencedTableName="m_extend_kfs_template"
+            referencedColumnNames="id"
+            constraintName="FK_m_extend_kfs_template_parent"/>
+    </changeSet>
+
+    <changeSet id="9004-3" author="fineract">
+        <addForeignKeyConstraint
+            baseTableName="m_extend_kfs_template"
+            baseColumnNames="created_by"
+            referencedTableName="m_appuser"
+            referencedColumnNames="id"
+            constraintName="FK_m_extend_kfs_template_created_by"/>
+    </changeSet>
+
+    <changeSet id="9004-4" author="fineract">
+        <addForeignKeyConstraint
+            baseTableName="m_extend_kfs_template"
+            baseColumnNames="last_modified_by"
+            referencedTableName="m_appuser"
+            referencedColumnNames="id"
+            constraintName="FK_m_extend_kfs_template_last_modified_by"/>
+    </changeSet>
+
+    <changeSet id="9004-5" author="fineract">
+        <addUniqueConstraint
+            tableName="m_extend_kfs_template"
+            columnNames="template_name,template_version"
+            constraintName="uk_template_name_version"/>
+    </changeSet>
+
+    <changeSet id="9004-6" author="fineract">
+        <createIndex tableName="m_extend_kfs_template" indexName="idx_extend_kfs_template_active">
+            <column name="is_active_version"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="9004-7" author="fineract">
+        <createIndex tableName="m_extend_kfs_template" indexName="idx_extend_kfs_template_type">
+            <column name="template_type"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="9004-8" author="fineract">
+        <sql>CREATE INDEX idx_extend_kfs_template_fields_config_gin ON m_extend_kfs_template USING GIN (template_fields_config);</sql>
+    </changeSet>
+
+    <changeSet id="9004-9" author="fineract">
+        <insert tableName="m_permission">
+            <column name="grouping" value="Custom"/>
+            <column name="code" value="READ_KFS_DOCUMENT"/>
+            <column name="entity_name" value="KFS_DOCUMENT"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="Custom"/>
+            <column name="code" value="CREATE_KFS_DOCUMENT"/>
+            <column name="entity_name" value="KFS_DOCUMENT"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="Custom"/>
+            <column name="code" value="UPDATE_KFS_DOCUMENT"/>
+            <column name="entity_name" value="KFS_DOCUMENT"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="Custom"/>
+            <column name="code" value="DELETE_KFS_DOCUMENT"/>
+            <column name="entity_name" value="KFS_DOCUMENT"/>
+            <column name="action_name" value="DELETE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
