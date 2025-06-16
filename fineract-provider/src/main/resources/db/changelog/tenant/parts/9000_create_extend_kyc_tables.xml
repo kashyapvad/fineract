@@ -21,132 +21,11 @@
 -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
 
-    <!-- Create m_extend_client_kyc_details table for MySQL -->
-    <changeSet author="fineract" id="1" context="mysql">
+    <changeSet author="fineract" id="9000-1">
         <createTable tableName="m_extend_client_kyc_details">
-            <column autoIncrement="true" name="id" type="BIGINT">
-                <constraints nullable="false" primaryKey="true"/>
-            </column>
-            <column name="client_id" type="BIGINT">
-                <constraints nullable="false"/>
-            </column>
-
-            <!-- KYC Document Fields -->
-            <column name="pan_number" type="VARCHAR(10)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="aadhaar_number" type="VARCHAR(12)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="driving_license_number" type="VARCHAR(20)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="voter_id" type="VARCHAR(20)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="passport_number" type="VARCHAR(20)">
-                <constraints nullable="true"/>
-            </column>
-
-            <!-- Verification Status Fields -->
-            <column name="pan_verified" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
-            <column name="aadhaar_verified" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
-            <column name="driving_license_verified" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
-            <column name="voter_id_verified" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
-            <column name="passport_verified" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
-
-            <!-- Verification Metadata -->
-            <column name="verification_method" type="VARCHAR(10)" defaultValue="MANUAL">
-                <constraints nullable="false"/>
-            </column>
-            <column name="last_verified_on" type="DATE">
-                <constraints nullable="true"/>
-            </column>
-            <column name="verification_provider" type="VARCHAR(50)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="verified_by_user_id" type="BIGINT">
-                <constraints nullable="true"/>
-            </column>
-
-            <!-- Provider-Agnostic Response Storage -->
-            <column name="api_response_data" type="JSON">
-                <constraints nullable="true"/>
-            </column>
-            <column name="verification_notes" type="TEXT">
-                <constraints nullable="true"/>
-            </column>
-
-            <!-- Audit Fields -->
-            <column name="created_on_utc" type="DATETIME(6)" defaultValueComputed="CURRENT_TIMESTAMP(6)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="created_by" type="BIGINT">
-                <constraints nullable="true"/>
-            </column>
-            <column name="last_modified_on_utc" type="DATETIME(6)" defaultValueComputed="CURRENT_TIMESTAMP(6)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="last_modified_by" type="BIGINT">
-                <constraints nullable="true"/>
-            </column>
-        </createTable>
-
-        <!-- Add foreign key constraints -->
-        <addForeignKeyConstraint baseTableName="m_extend_client_kyc_details"
-                                 baseColumnNames="client_id"
-                                 constraintName="FK_extend_kyc_client"
-                                 referencedTableName="m_client"
-                                 referencedColumnNames="id"/>
-
-        <addForeignKeyConstraint baseTableName="m_extend_client_kyc_details"
-                                 baseColumnNames="verified_by_user_id"
-                                 constraintName="FK_extend_kyc_user"
-                                 referencedTableName="m_appuser"
-                                 referencedColumnNames="id"/>
-
-        <addForeignKeyConstraint baseTableName="m_extend_client_kyc_details"
-                                 baseColumnNames="created_by"
-                                 constraintName="FK_extend_kyc_created_user"
-                                 referencedTableName="m_appuser"
-                                 referencedColumnNames="id"/>
-
-        <addForeignKeyConstraint baseTableName="m_extend_client_kyc_details"
-                                 baseColumnNames="last_modified_by"
-                                 constraintName="FK_extend_kyc_modified_user"
-                                 referencedTableName="m_appuser"
-                                 referencedColumnNames="id"/>
-
-        <!-- Add indexes for performance -->
-        <createIndex tableName="m_extend_client_kyc_details" indexName="idx_extend_kyc_client_id">
-            <column name="client_id"/>
-        </createIndex>
-
-        <createIndex tableName="m_extend_client_kyc_details" indexName="idx_extend_kyc_verification_method">
-            <column name="verification_method"/>
-        </createIndex>
-
-        <createIndex tableName="m_extend_client_kyc_details" indexName="idx_extend_kyc_last_verified">
-            <column name="last_verified_on"/>
-        </createIndex>
-    </changeSet>
-
-    <!-- Create m_extend_client_kyc_details table for PostgreSQL -->
-    <changeSet author="fineract" id="2" context="postgresql">
-        <createTable tableName="m_extend_client_kyc_details">
-            <column autoIncrement="true" name="id" type="BIGINT">
+            <column name="id" type="BIGSERIAL">
                 <constraints nullable="false" primaryKey="true"/>
             </column>
             <column name="client_id" type="BIGINT">
@@ -223,7 +102,9 @@
                 <constraints nullable="true"/>
             </column>
         </createTable>
+    </changeSet>
 
+    <changeSet author="fineract" id="9000-2">
         <!-- Add foreign key constraints -->
         <addForeignKeyConstraint baseTableName="m_extend_client_kyc_details"
                                  baseColumnNames="client_id"
@@ -248,7 +129,9 @@
                                  constraintName="FK_extend_kyc_modified_user"
                                  referencedTableName="m_appuser"
                                  referencedColumnNames="id"/>
+    </changeSet>
 
+    <changeSet author="fineract" id="9000-3">
         <!-- Add indexes for performance -->
         <createIndex tableName="m_extend_client_kyc_details" indexName="idx_extend_kyc_client_id">
             <column name="client_id"/>
@@ -267,44 +150,44 @@
     </changeSet>
 
     <!-- Add CLIENT_KYC permissions -->
-    <changeSet author="fineract" id="3">
+    <changeSet author="fineract" id="9000-4">
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="READ_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="READ"/>
             <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="CREATE_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="CREATE"/>
             <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="UPDATE_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="UPDATE"/>
             <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="DELETE_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="DELETE"/>
             <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="VERIFY_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="VERIFY"/>
             <column name="can_maker_checker" valueBoolean="false"/>
         </insert>
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="UNVERIFY_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="UNVERIFY"/>
@@ -312,7 +195,7 @@
         </insert>
         <!-- Add specific permission for API-based verification -->
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="VERIFY_API_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="VERIFY_API"/>
@@ -320,7 +203,7 @@
         </insert>
         <!-- Add specific permission for manual verification -->
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="VERIFY_MANUAL_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="VERIFY_MANUAL"/>
@@ -328,7 +211,7 @@
         </insert>
         <!-- Add specific permission for manual unverification -->
         <insert tableName="m_permission">
-            <column name="grouping" value="portfolio"/>
+            <column name="grouping" value="Custom"/>
             <column name="code" value="UNVERIFY_MANUAL_CLIENT_KYC"/>
             <column name="entity_name" value="CLIENT_KYC"/>
             <column name="action_name" value="UNVERIFY_MANUAL"/>

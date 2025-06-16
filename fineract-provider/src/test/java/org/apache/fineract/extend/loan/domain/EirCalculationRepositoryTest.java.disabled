@@ -1,0 +1,410 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.fineract.extend.loan.domain;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import org.apache.fineract.ServerApplication;
+import org.apache.fineract.extend.loan.domain.EirCalculation;
+import org.apache.fineract.extend.loan.domain.EirCalculationRepository;
+import org.apache.fineract.infrastructure.core.domain.ActionContext;
+import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+@ExtendWith(SpringExtension.class)
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class EirCalculationRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private EirCalculationRepository eirCalculationRepository;
+
+    private EirCalculation testCalculation1;
+    private EirCalculation testCalculation2;
+    private EirCalculation testCalculation3;
+
+    @BeforeEach
+    void setUp() {
+        // Setup tenant context for testing
+        FineractPlatformTenant tenant = new FineractPlatformTenant(1L, "default", "Default", "Europe/Berlin", null);
+        ThreadLocalContextUtil.setTenant(tenant);
+        ThreadLocalContextUtil.setActionContext(ActionContext.DEFAULT);
+        
+        // Setup test data
+        testCalculation1 = new EirCalculation();
+        testCalculation1.setLoanId(1L);
+        testCalculation1.setPrincipalAmount(new BigDecimal("100000.00"));
+        testCalculation1.setInterestRate(new BigDecimal("12.0"));
+        testCalculation1.setEirPercentage(new BigDecimal("12.68"));
+        testCalculation1.setTenureMonths(12);
+        testCalculation1.setCalculationDate(LocalDate.now().minusDays(10));
+        testCalculation1.setStatus("CALCULATED");
+        testCalculation1.setRepaymentFrequency("MONTHLY");
+
+        testCalculation2 = new EirCalculation();
+        testCalculation2.setLoanId(2L);
+        testCalculation2.setPrincipalAmount(new BigDecimal("500000.00"));
+        testCalculation2.setInterestRate(new BigDecimal("24.0"));
+        testCalculation2.setEirPercentage(new BigDecimal("26.82"));
+        testCalculation2.setTenureMonths(24);
+        testCalculation2.setCalculationDate(LocalDate.now().minusDays(2));
+        testCalculation2.setStatus("CALCULATED");
+        testCalculation2.setRepaymentFrequency("WEEKLY");
+
+        testCalculation3 = new EirCalculation();
+        testCalculation3.setLoanId(2L); // Different loan
+        testCalculation3.setPrincipalAmount(new BigDecimal("500000.00"));
+        testCalculation3.setInterestRate(new BigDecimal("24.0"));
+        testCalculation3.setEirPercentage(new BigDecimal("26.82"));
+        testCalculation3.setTenureMonths(24);
+        testCalculation3.setCalculationDate(LocalDate.now().minusDays(2));
+        testCalculation3.setStatus("CALCULATED");
+        testCalculation3.setRepaymentFrequency("WEEKLY");
+    }
+
+    @Test
+    void shouldSaveAndFindEirCalculation() {
+        // Given
+        EirCalculation savedCalculation = entityManager.persistAndFlush(testCalculation1);
+
+        // When
+        Optional<EirCalculation> found = eirCalculationRepository.findById(savedCalculation.getId());
+
+        // Then
+        assertTrue(found.isPresent());
+        EirCalculation calculation = found.get();
+        assertEquals(testCalculation1.getLoanId(), calculation.getLoanId());
+        assertEquals(testCalculation1.getEirPercentage(), calculation.getEirPercentage());
+        assertEquals(testCalculation1.getStatus(), calculation.getStatus());
+    }
+
+    @Test
+    void shouldFindEirCalculationsByLoanIdOrderedByDateDesc() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1);
+        entityManager.persistAndFlush(testCalculation2);
+        entityManager.persistAndFlush(testCalculation3);
+
+        // When
+        List<EirCalculation> calculations = eirCalculationRepository
+                .findByLoanIdOrderByCalculationDateDesc(1L);
+
+        // Then
+        assertNotNull(calculations);
+        assertEquals(2, calculations.size()); // Only loan ID 1
+        
+        // Verify order (most recent first)
+        assertEquals(testCalculation2.getCalculationDate(), calculations.get(0).getCalculationDate());
+        assertEquals(testCalculation1.getCalculationDate(), calculations.get(1).getCalculationDate());
+        assertEquals("RECALCULATED", calculations.get(0).getStatus());
+        assertEquals("CALCULATED", calculations.get(1).getStatus());
+    }
+
+    @Test
+    void shouldFindEirCalculationsByLoanIdAndStatus() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1);
+        entityManager.persistAndFlush(testCalculation2);
+        entityManager.persistAndFlush(testCalculation3);
+
+        // When - Find calculations by status
+        List<EirCalculation> calculatedResults = eirCalculationRepository
+                .findByLoanIdAndStatus(1L, "CALCULATED");
+
+        List<EirCalculation> loan2Results = eirCalculationRepository
+                .findByLoanIdAndStatus(2L, "CALCULATED");
+
+        // Then
+        assertNotNull(calculatedResults);
+        assertEquals(1, calculatedResults.size());
+        assertEquals("CALCULATED", calculatedResults.get(0).getStatus());
+
+        assertNotNull(loan2Results);
+        assertEquals(1, loan2Results.size());
+        assertEquals("CALCULATED", loan2Results.get(0).getStatus());
+    }
+
+    @Test
+    void shouldFindEirCalculationsByDateRange() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1);
+        entityManager.persistAndFlush(testCalculation2);
+        entityManager.persistAndFlush(testCalculation3);
+
+        LocalDate fromDate = LocalDate.now().minusDays(7);
+        LocalDate toDate = LocalDate.now();
+
+        // When
+        List<EirCalculation> calculationsInRange = eirCalculationRepository
+                .findByLoanIdAndCalculationDateBetween(1L, fromDate, toDate);
+
+        // Then
+        assertNotNull(calculationsInRange);
+        assertEquals(1, calculationsInRange.size()); // Only testCalculation2 is in range for loan 1
+        assertEquals(testCalculation2.getCalculationDate(), calculationsInRange.get(0).getCalculationDate());
+    }
+
+    @Test
+    void shouldFindLatestEirCalculationForLoan() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1);
+        entityManager.persistAndFlush(testCalculation2);
+        entityManager.persistAndFlush(testCalculation3);
+
+        // When
+        Optional<EirCalculation> latestCalculation = eirCalculationRepository
+                .findFirstByLoanIdOrderByCalculationDateDesc(1L);
+
+        // Then
+        assertTrue(latestCalculation.isPresent());
+        assertEquals(testCalculation2.getCalculationDate(), latestCalculation.get().getCalculationDate());
+        assertEquals("RECALCULATED", latestCalculation.get().getStatus());
+    }
+
+    @Test
+    void shouldFindEirCalculationsByStatus() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1);
+        entityManager.persistAndFlush(testCalculation2);
+        entityManager.persistAndFlush(testCalculation3);
+
+        // When
+        List<EirCalculation> calculatedStatus = eirCalculationRepository.findByStatus("CALCULATED");
+        List<EirCalculation> recalculatedStatus = eirCalculationRepository.findByStatus("RECALCULATED");
+        List<EirCalculation> nonCompliantStatus = eirCalculationRepository.findByStatus("CALCULATED");
+
+        // Then
+        assertNotNull(calculatedStatus);
+        assertEquals(1, calculatedStatus.size());
+        assertEquals("CALCULATED", calculatedStatus.get(0).getStatus());
+
+        assertNotNull(recalculatedStatus);
+        assertEquals(1, recalculatedStatus.size());
+        assertEquals("RECALCULATED", recalculatedStatus.get(0).getStatus());
+
+        assertNotNull(nonCompliantStatus);
+        assertEquals(1, nonCompliantStatus.size());
+        assertEquals("CALCULATED", nonCompliantStatus.get(0).getStatus());
+    }
+
+    @Test
+    void shouldCountEirCalculationsForLoan() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1);
+        entityManager.persistAndFlush(testCalculation2);
+        entityManager.persistAndFlush(testCalculation3);
+
+        // When
+        Long countForLoan1 = eirCalculationRepository.countByLoanId(1L);
+        Long countForLoan2 = eirCalculationRepository.countByLoanId(2L);
+        Long countForNonExistentLoan = eirCalculationRepository.countByLoanId(999L);
+
+        // Then
+        assertEquals(1L, countForLoan1);
+        assertEquals(1L, countForLoan2);
+        assertEquals(0L, countForNonExistentLoan);
+    }
+
+    @Test
+    void shouldCheckIfEirCalculationExistsForLoan() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1);
+        entityManager.persistAndFlush(testCalculation3);
+
+        // When
+        Boolean existsForLoan1 = eirCalculationRepository.existsByLoanId(1L);
+        Boolean existsForLoan2 = eirCalculationRepository.existsByLoanId(2L);
+        Boolean existsForNonExistentLoan = eirCalculationRepository.existsByLoanId(999L);
+
+        // Then
+        assertTrue(existsForLoan1);
+        assertTrue(existsForLoan2);
+        assertFalse(existsForNonExistentLoan);
+    }
+
+    @Test
+    void shouldUpdateEirCalculation() {
+        // Given
+        EirCalculation savedCalculation = entityManager.persistAndFlush(testCalculation1);
+        entityManager.detach(savedCalculation); // Detach to simulate real update scenario
+
+        // When
+        savedCalculation.setEirPercentage(new BigDecimal("14.50"));
+        savedCalculation.setStatus("UPDATED");
+        EirCalculation updatedCalculation = eirCalculationRepository.save(savedCalculation);
+
+        // Then
+        assertNotNull(updatedCalculation);
+        assertEquals(new BigDecimal("14.50"), updatedCalculation.getEirPercentage());
+        assertEquals("UPDATED", updatedCalculation.getStatus());
+    }
+
+    @Test
+    void shouldDeleteEirCalculation() {
+        // Given
+        EirCalculation savedCalculation = entityManager.persistAndFlush(testCalculation1);
+        Long calculationId = savedCalculation.getId();
+
+        // When
+        eirCalculationRepository.delete(savedCalculation);
+        entityManager.flush();
+
+        // Then
+        Optional<EirCalculation> deletedCalculation = eirCalculationRepository.findById(calculationId);
+        assertFalse(deletedCalculation.isPresent());
+    }
+
+    @Test
+    void shouldFindEirCalculationsWithHighEirPercentage() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1); // 12.68%
+        entityManager.persistAndFlush(testCalculation2); // 26.82%
+        entityManager.persistAndFlush(testCalculation3); // 26.82%
+
+        // When
+        List<EirCalculation> highEirCalculations = eirCalculationRepository
+                .findByEirPercentageGreaterThan(new BigDecimal("15.0"));
+
+        // Then
+        assertNotNull(highEirCalculations);
+        assertEquals(2, highEirCalculations.size());
+        assertTrue(highEirCalculations.stream()
+                .allMatch(calc -> calc.getEirPercentage().compareTo(new BigDecimal("15.0")) > 0));
+    }
+
+    @Test
+    void shouldFindEirCalculationsByRepaymentFrequency() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1); // MONTHLY
+        entityManager.persistAndFlush(testCalculation2); // WEEKLY
+        entityManager.persistAndFlush(testCalculation3); // WEEKLY
+
+        // When
+        List<EirCalculation> monthlyCalculations = eirCalculationRepository
+                .findByRepaymentFrequency("MONTHLY");
+        List<EirCalculation> weeklyCalculations = eirCalculationRepository
+                .findByRepaymentFrequency("WEEKLY");
+
+        // Then
+        assertNotNull(monthlyCalculations);
+        assertEquals(1, monthlyCalculations.size());
+        assertTrue(monthlyCalculations.stream()
+                .allMatch(calc -> "MONTHLY".equals(calc.getRepaymentFrequency())));
+
+        assertNotNull(weeklyCalculations);
+        assertEquals(2, weeklyCalculations.size());
+        assertTrue(weeklyCalculations.stream()
+                .allMatch(calc -> "WEEKLY".equals(calc.getRepaymentFrequency())));
+    }
+
+    @Test
+    void shouldFindEirCalculationsByTenureRange() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1); // 12 months
+        entityManager.persistAndFlush(testCalculation2); // 24 months
+        entityManager.persistAndFlush(testCalculation3); // 24 months
+
+        // When
+        List<EirCalculation> shortTermCalculations = eirCalculationRepository
+                .findByTenureMonthsBetween(6, 18);
+        List<EirCalculation> longTermCalculations = eirCalculationRepository
+                .findByTenureMonthsBetween(19, 36);
+
+        // Then
+        assertNotNull(shortTermCalculations);
+        assertEquals(1, shortTermCalculations.size());
+        assertTrue(shortTermCalculations.stream()
+                .allMatch(calc -> calc.getTenureMonths() >= 6 && calc.getTenureMonths() <= 18));
+
+        assertNotNull(longTermCalculations);
+        assertEquals(2, longTermCalculations.size());
+        assertTrue(longTermCalculations.stream()
+                .allMatch(calc -> calc.getTenureMonths() >= 19 && calc.getTenureMonths() <= 36));
+    }
+
+    @Test
+    void shouldFindEirCalculationsByPrincipalAmountRange() {
+        // Given
+        entityManager.persistAndFlush(testCalculation1); // 100000
+        entityManager.persistAndFlush(testCalculation2); // 500000
+        entityManager.persistAndFlush(testCalculation3); // 500000
+
+        // When
+        List<EirCalculation> smallLoans = eirCalculationRepository
+                .findByPrincipalAmountBetween(new BigDecimal("50000"), new BigDecimal("200000"));
+        List<EirCalculation> largeLoans = eirCalculationRepository
+                .findByPrincipalAmountBetween(new BigDecimal("400000"), new BigDecimal("1000000"));
+
+        // Then
+        assertNotNull(smallLoans);
+        assertEquals(1, smallLoans.size());
+
+        assertNotNull(largeLoans);
+        assertEquals(2, largeLoans.size());
+        assertEquals(new BigDecimal("500000.00"), largeLoans.get(0).getPrincipalAmount());
+        assertEquals(new BigDecimal("500000.00"), largeLoans.get(1).getPrincipalAmount());
+    }
+
+    @Test
+    void shouldValidateEntityConstraints() {
+        // Given - EIR calculation with required fields
+        EirCalculation validCalculation = new EirCalculation();
+        validCalculation.setLoanId(10L);
+        validCalculation.setPrincipalAmount(new BigDecimal("50000.00"));
+        validCalculation.setInterestRate(new BigDecimal("10.0"));
+        validCalculation.setEirPercentage(new BigDecimal("10.47"));
+        validCalculation.setTenureMonths(6);
+        validCalculation.setCalculationDate(LocalDate.now());
+        validCalculation.setStatus("CALCULATED");
+        validCalculation.setRepaymentFrequency("MONTHLY");
+
+        // When
+        EirCalculation saved = entityManager.persistAndFlush(validCalculation);
+
+        // Then
+        assertNotNull(saved);
+        assertNotNull(saved.getId());
+        assertEquals(validCalculation.getLoanId(), saved.getLoanId());
+        assertEquals(validCalculation.getEirPercentage(), saved.getEirPercentage());
+    }
+
+    @AfterEach
+    void tearDown() {
+        ThreadLocalContextUtil.reset();
+    }
+} 

@@ -1,0 +1,366 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.fineract.extend.kfs.domain;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.fineract.ServerApplication;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+/**
+ * Repository tests for KfsTemplateRepository.
+ * Tests JPA repository methods and custom queries for KFS templates.
+ * 
+ * Following TDD approach - tests exist before implementation.
+ */
+@ExtendWith(SpringExtension.class)
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class KfsTemplateRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private KfsTemplateRepository kfsTemplateRepository;
+
+    private KfsTemplate loanAgreementTemplate;
+    private KfsTemplate repaymentScheduleTemplate;
+    private KfsTemplate loanAgreementV2Template;
+
+    @BeforeEach
+    void setUp() {
+        // Clear any existing data
+        kfsTemplateRepository.deleteAll();
+        entityManager.flush();
+
+        // Setup test templates
+        loanAgreementTemplate = new KfsTemplate(
+            "Loan Agreement", 
+            "v1.0", 
+            "/templates/loan-agreement-v1.docx", 
+            true
+        );
+        loanAgreementTemplate.setTemplateDescription("Standard personal loan agreement template");
+        loanAgreementTemplate.setTemplateType("LOAN_AGREEMENT");
+        loanAgreementTemplate.setTemplateFieldsConfig("{\"borrowerName\":{\"type\":\"string\",\"required\":true},\"loanAmount\":{\"type\":\"decimal\",\"required\":true}}");
+
+        repaymentScheduleTemplate = new KfsTemplate(
+            "Repayment Schedule", 
+            "v1.0", 
+            "/templates/repayment-schedule-v1.xlsx", 
+            true
+        );
+        repaymentScheduleTemplate.setTemplateDescription("Loan repayment schedule template");
+        repaymentScheduleTemplate.setTemplateType("REPAYMENT_SCHEDULE");
+        repaymentScheduleTemplate.setTemplateFieldsConfig("{\"loanId\":{\"type\":\"long\",\"required\":true},\"installments\":{\"type\":\"array\",\"required\":true}}");
+
+        loanAgreementV2Template = new KfsTemplate(
+            "Loan Agreement", 
+            "v2.0", 
+            "/templates/loan-agreement-v2.docx", 
+            false
+        );
+        loanAgreementV2Template.setTemplateDescription("Updated loan agreement template with additional fields");
+        loanAgreementV2Template.setTemplateType("LOAN_AGREEMENT");
+        loanAgreementV2Template.setParentTemplateId(1L);
+
+        // Persist test data
+        entityManager.persistAndFlush(loanAgreementTemplate);
+        entityManager.persistAndFlush(repaymentScheduleTemplate);
+        entityManager.persistAndFlush(loanAgreementV2Template);
+    }
+
+    @Test
+    void shouldFindByNameAndVersion() {
+        // When
+        Optional<KfsTemplate> result = kfsTemplateRepository.findByNameAndVersion("Loan Agreement", "v1.0");
+
+        // Then
+        assertTrue(result.isPresent());
+        KfsTemplate found = result.get();
+        assertEquals("Loan Agreement", found.getTemplateName());
+        assertEquals("v1.0", found.getTemplateVersion());
+        assertEquals("/templates/loan-agreement-v1.docx", found.getTemplateFilePath());
+        assertTrue(found.getIsActiveVersion());
+    }
+
+    @Test
+    void shouldReturnEmptyWhenTemplateNotFoundByNameAndVersion() {
+        // When
+        Optional<KfsTemplate> result = kfsTemplateRepository.findByNameAndVersion("Non Existent Template", "v1.0");
+
+        // Then
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void shouldFindAllTemplatesByName() {
+        // When
+        List<KfsTemplate> result = kfsTemplateRepository.findByTemplateName("Loan Agreement");
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        
+        // Verify both versions are returned
+        boolean foundV1 = result.stream().anyMatch(t -> "v1.0".equals(t.getTemplateVersion()));
+        boolean foundV2 = result.stream().anyMatch(t -> "v2.0".equals(t.getTemplateVersion()));
+        assertTrue(foundV1);
+        assertTrue(foundV2);
+    }
+
+    @Test
+    void shouldFindActiveVersionTemplates() {
+        // When
+        List<KfsTemplate> result = kfsTemplateRepository.findByIsActiveVersionTrue();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        
+        // Verify all returned templates are active
+        result.forEach(template -> assertTrue(template.getIsActiveVersion()));
+        
+        // Verify specific active templates
+        boolean foundLoanAgreement = result.stream().anyMatch(t -> "Loan Agreement".equals(t.getTemplateName()) && "v1.0".equals(t.getTemplateVersion()));
+        boolean foundRepaymentSchedule = result.stream().anyMatch(t -> "Repayment Schedule".equals(t.getTemplateName()));
+        assertTrue(foundLoanAgreement);
+        assertTrue(foundRepaymentSchedule);
+    }
+
+    @Test
+    void shouldFindTemplatesByType() {
+        // When
+        List<KfsTemplate> result = kfsTemplateRepository.findByTemplateType("LOAN_AGREEMENT");
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        
+        // Verify all returned templates are of correct type
+        result.forEach(template -> assertEquals("LOAN_AGREEMENT", template.getTemplateType()));
+    }
+
+    @Test
+    void shouldFindLatestVersionByName() {
+        // When
+        Optional<KfsTemplate> result = kfsTemplateRepository.findLatestVersionByName("Loan Agreement");
+
+        // Then
+        assertTrue(result.isPresent());
+        KfsTemplate latest = result.get();
+        assertEquals("Loan Agreement", latest.getTemplateName());
+        assertEquals("v2.0", latest.getTemplateVersion()); // v2.0 should be latest lexicographically
+    }
+
+    @Test
+    void shouldFindByTemplateNameOrderByVersionDesc() {
+        // When
+        List<KfsTemplate> result = kfsTemplateRepository.findByTemplateNameOrderByVersionDesc("Loan Agreement");
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        
+        // Verify all returned templates have the correct name
+        result.forEach(template -> assertEquals("Loan Agreement", template.getTemplateName()));
+        
+        // Verify ordering - v2.0 should come before v1.0 (descending order)
+        assertEquals("v2.0", result.get(0).getTemplateVersion());
+        assertEquals("v1.0", result.get(1).getTemplateVersion());
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoTemplatesFoundByNameOrderByVersionDesc() {
+        // When
+        List<KfsTemplate> result = kfsTemplateRepository.findByTemplateNameOrderByVersionDesc("Non Existent Template");
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldFindActiveVersionByName() {
+        // When
+        Optional<KfsTemplate> result = kfsTemplateRepository.findActiveVersionByName("Loan Agreement");
+
+        // Then
+        assertTrue(result.isPresent());
+        KfsTemplate active = result.get();
+        assertEquals("Loan Agreement", active.getTemplateName());
+        assertEquals("v1.0", active.getTemplateVersion()); // Only v1.0 is active
+        assertTrue(active.getIsActiveVersion());
+    }
+
+    @Test
+    void shouldReturnEmptyWhenNoActiveVersionByName() {
+        // Given - Create template with no active version
+        KfsTemplate inactiveTemplate = new KfsTemplate("Inactive Template", "v1.0", "/templates/inactive.docx", false);
+        entityManager.persistAndFlush(inactiveTemplate);
+
+        // When
+        Optional<KfsTemplate> result = kfsTemplateRepository.findActiveVersionByName("Inactive Template");
+
+        // Then
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void shouldDeleteByNameAndVersion() {
+        // Given
+        long initialCount = kfsTemplateRepository.count();
+
+        // When
+        long deletedCount = kfsTemplateRepository.deleteByNameAndVersion("Loan Agreement", "v2.0");
+        entityManager.flush();
+
+        // Then
+        assertEquals(1L, deletedCount);
+        assertEquals(initialCount - 1, kfsTemplateRepository.count());
+        
+        // Verify specific template was deleted
+        Optional<KfsTemplate> deleted = kfsTemplateRepository.findByNameAndVersion("Loan Agreement", "v2.0");
+        assertFalse(deleted.isPresent());
+        
+        // Verify other template still exists
+        Optional<KfsTemplate> remaining = kfsTemplateRepository.findByNameAndVersion("Loan Agreement", "v1.0");
+        assertTrue(remaining.isPresent());
+    }
+
+    @Test
+    void shouldCountTemplatesByName() {
+        // When
+        long count = kfsTemplateRepository.countByTemplateName("Loan Agreement");
+
+        // Then
+        assertEquals(2L, count);
+    }
+
+    @Test
+    void shouldCheckExistenceByNameAndVersion() {
+        // When & Then
+        assertTrue(kfsTemplateRepository.existsByNameAndVersion("Loan Agreement", "v1.0"));
+        assertTrue(kfsTemplateRepository.existsByNameAndVersion("Loan Agreement", "v2.0"));
+        assertFalse(kfsTemplateRepository.existsByNameAndVersion("Non Existent", "v1.0"));
+        assertFalse(kfsTemplateRepository.existsByNameAndVersion("Loan Agreement", "v3.0"));
+    }
+
+    @Test
+    void shouldFindActiveTemplatesOrderedByName() {
+        // When
+        List<KfsTemplate> result = kfsTemplateRepository.findByIsActiveVersionTrueOrderByTemplateName();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        
+        // Verify ordering (Loan Agreement should come before Repayment Schedule alphabetically)
+        assertEquals("Loan Agreement", result.get(0).getTemplateName());
+        assertEquals("Repayment Schedule", result.get(1).getTemplateName());
+        
+        // Verify all are active
+        result.forEach(template -> assertTrue(template.getIsActiveVersion()));
+    }
+
+    @Test
+    void shouldSaveTemplateWithAllFields() {
+        // Given
+        KfsTemplate newTemplate = new KfsTemplate(
+            "Business Loan Agreement", 
+            "v1.0", 
+            "/templates/business-loan-v1.docx", 
+            true
+        );
+        newTemplate.setTemplateDescription("Business loan agreement for corporate clients");
+        newTemplate.setTemplateType("BUSINESS_LOAN_AGREEMENT");
+        newTemplate.setTemplateFieldsConfig("{\"companyName\":{\"type\":\"string\",\"required\":true}}");
+        newTemplate.setParentTemplateId(null);
+
+        // When
+        KfsTemplate saved = kfsTemplateRepository.saveAndFlush(newTemplate);
+
+        // Then
+        assertNotNull(saved.getId());
+        assertEquals("Business Loan Agreement", saved.getTemplateName());
+        assertEquals("v1.0", saved.getTemplateVersion());
+        assertEquals("/templates/business-loan-v1.docx", saved.getTemplateFilePath());
+        assertEquals("Business loan agreement for corporate clients", saved.getTemplateDescription());
+        assertEquals("BUSINESS_LOAN_AGREEMENT", saved.getTemplateType());
+        assertTrue(saved.getIsActiveVersion());
+        assertNotNull(saved.getTemplateFieldsConfig());
+    }
+
+    @Test
+    void shouldEnforceUniqueConstraintOnNameAndVersion() {
+        // Given
+        KfsTemplate duplicateTemplate = new KfsTemplate(
+            "Loan Agreement", 
+            "v1.0", 
+            "/templates/duplicate.docx", 
+            false
+        );
+
+        // When & Then
+        // This should fail due to unique constraint on template_name + template_version
+        try {
+            entityManager.persistAndFlush(duplicateTemplate);
+            // If we reach here, the test should fail
+            assertTrue(false, "Expected constraint violation exception");
+        } catch (Exception e) {
+            // Expected - constraint violation
+            assertTrue(e.getMessage().contains("constraint") || e.getMessage().contains("unique") || e.getMessage().contains("duplicate"));
+        }
+    }
+
+    @Test
+    void shouldUpdateTemplateActiveStatus() {
+        // Given
+        Optional<KfsTemplate> template = kfsTemplateRepository.findByNameAndVersion("Loan Agreement", "v2.0");
+        assertTrue(template.isPresent());
+        assertFalse(template.get().getIsActiveVersion());
+
+        // When
+        KfsTemplate toUpdate = template.get();
+        toUpdate.setIsActiveVersion(true);
+        KfsTemplate updated = kfsTemplateRepository.saveAndFlush(toUpdate);
+
+        // Then
+        assertTrue(updated.getIsActiveVersion());
+        
+        // Verify persistence
+        Optional<KfsTemplate> reloaded = kfsTemplateRepository.findByNameAndVersion("Loan Agreement", "v2.0");
+        assertTrue(reloaded.isPresent());
+        assertTrue(reloaded.get().getIsActiveVersion());
+    }
+} 

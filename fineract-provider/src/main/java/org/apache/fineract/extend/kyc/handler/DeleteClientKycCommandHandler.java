@@ -29,8 +29,8 @@ import org.springframework.stereotype.Service;
 /**
  * Command handler for deleting client KYC details.
  *
- * This handler processes commands to delete existing KYC details records for clients.
- * Use with caution as this permanently removes KYC information and verification history.
+ * This handler processes commands to delete existing KYC details records for clients. Use with caution as this
+ * permanently removes KYC information and verification history.
  */
 @Service
 @RequiredArgsConstructor
@@ -43,4 +43,4 @@ public class DeleteClientKycCommandHandler implements NewCommandSourceHandler {
     public CommandProcessingResult processCommand(final JsonCommand command) {
         return this.clientKycWritePlatformService.deleteKycDetails(command);
     }
-} 
+}
