@@ -204,8 +204,11 @@
     <include file="parts/0183_add_LoanCapitalizedIncomeTransactionCreatedBusinessEvent.xml" relativeToChangelogFile="true" />
     <include file="parts/0184_add_document_event_configuration.xml" relativeToChangelogFile="true" />
 
-    <!-- KYC Module Extensions -->
+    <!-- Extension Migrations-->
     <include file="parts/9000_create_extend_kyc_tables.xml" relativeToChangelogFile="true" />
     <include file="parts/9001_create_extend_credit_report_table.xml" relativeToChangelogFile="true" />
     <include file="parts/9002_create_extend_credit_score_table.xml" relativeToChangelogFile="true" />
+    <include file="parts/9003_create_extend_eir_calculation_table.xml" relativeToChangelogFile="true" />
+    <include file="parts/9004_create_extend_kfs_template_table.xml" relativeToChangelogFile="true" />
+    <include file="parts/9005_create_extend_kfs_document_table.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

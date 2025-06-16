@@ -22,7 +22,7 @@ import org.apache.fineract.commands.domain.CommandWrapper;
 import org.springframework.stereotype.Component;
 
 /**
- * Custom Command Wrapper Builder for Extended KYC Module.
+ * Custom Command Wrapper Builder for Extended Modules.
  *
  * This builder creates CommandWrapper objects for custom extend functionality without modifying upstream Apache
  * Fineract core files.
@@ -290,6 +290,168 @@ public class ExtendCommandWrapperBuilder {
                 null, // subentityId
                 "/clients/" + clientId + "/extend/creditreport/reports/" + reportId, // href
                 json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for creating EIR calculations.
+     */
+    public static CommandWrapper createEirCalculation(final Long loanId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                null, // clientId
+                loanId, // loanId
+                null, // savingsId
+                "CREATE", // actionName
+                "EIR_CALCULATION", // entityName
+                null, // entityId
+                null, // subentityId
+                "/loans/" + loanId + "/extend/eir", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for updating EIR calculations.
+     */
+    public static CommandWrapper updateEirCalculation(final Long loanId, final Long eirId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                null, // clientId
+                loanId, // loanId
+                null, // savingsId
+                "UPDATE", // actionName
+                "EIR_CALCULATION", // entityName
+                eirId, // entityId
+                null, // subentityId
+                "/loans/" + loanId + "/extend/eir/" + eirId, // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for deleting EIR calculations.
+     */
+    public static CommandWrapper deleteEirCalculation(final Long loanId, final Long eirId) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                null, // clientId
+                loanId, // loanId
+                null, // savingsId
+                "DELETE", // actionName
+                "EIR_CALCULATION", // entityName
+                eirId, // entityId
+                null, // subentityId
+                "/loans/" + loanId + "/extend/eir/" + eirId, // href
+                "{}", // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for creating KFS documents.
+     */
+    public static CommandWrapper createKfsDocument(final Long clientId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "CREATE", // actionName
+                "KFS_DOCUMENT", // entityName
+                null, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/kfs", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for updating KFS documents.
+     */
+    public static CommandWrapper updateKfsDocument(final Long clientId, final Long kfsId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "UPDATE", // actionName
+                "KFS_DOCUMENT", // entityName
+                kfsId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/kfs/" + kfsId, // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for deleting KFS documents.
+     */
+    public static CommandWrapper deleteKfsDocument(final Long clientId, final Long kfsId) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "DELETE", // actionName
+                "KFS_DOCUMENT", // entityName
+                kfsId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/kfs/" + kfsId, // href
+                "{}", // json
                 null, // transactionId
                 null, // productId
                 null, // templateId

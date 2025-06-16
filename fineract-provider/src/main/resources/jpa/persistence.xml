@@ -162,6 +162,12 @@
         <class>org.apache.fineract.portfolio.tax.domain.TaxComponentHistory</class>
         <class>org.apache.fineract.portfolio.tax.domain.TaxGroup</class>
         <class>org.apache.fineract.portfolio.tax.domain.TaxGroupMappings</class>
+        <!-- Fineract Extend module entities -->
+        <class>org.apache.fineract.extend.kyc.domain.ClientKycDetails</class>
+        <class>org.apache.fineract.extend.creditbureau.domain.ClientCreditReportDetails</class>
+        <class>org.apache.fineract.extend.creditbureau.domain.ClientCreditScoreDetails</class>
+        <class>org.apache.fineract.extend.kfs.domain.KfsTemplate</class>
+        <class>org.apache.fineract.extend.kfs.domain.KfsDocument</class>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
         <properties>
             <property name="eclipselink.weaving" value="static" />

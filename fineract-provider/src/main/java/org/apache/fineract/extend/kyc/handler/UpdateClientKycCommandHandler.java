@@ -29,8 +29,8 @@ import org.springframework.stereotype.Service;
 /**
  * Command handler for updating client KYC details.
  *
- * This handler processes commands to update existing KYC details records for clients with modified
- * document numbers, verification status, or other KYC information.
+ * This handler processes commands to update existing KYC details records for clients with modified document numbers,
+ * verification status, or other KYC information.
  */
 @Service
 @RequiredArgsConstructor
@@ -43,4 +43,4 @@ public class UpdateClientKycCommandHandler implements NewCommandSourceHandler {
     public CommandProcessingResult processCommand(final JsonCommand command) {
         return this.clientKycWritePlatformService.updateKycDetails(command);
     }
-} 
+}

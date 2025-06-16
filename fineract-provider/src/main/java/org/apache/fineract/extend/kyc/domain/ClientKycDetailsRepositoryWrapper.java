@@ -181,4 +181,6 @@ public class ClientKycDetailsRepositoryWrapper {
     public Optional<ClientKycDetails> getByClientId(final Long clientId) {
         return this.clientKycDetailsRepository.findByClient_Id(clientId);
     }
+
+    // Removed findLatestKycWithDataByClientId - no longer needed with 1-to-1 relationship
 }

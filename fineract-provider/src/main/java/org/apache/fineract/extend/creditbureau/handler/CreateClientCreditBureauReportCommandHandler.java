@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 /**
  * Command handler for creating credit bureau reports manually.
  *
- * This handler processes commands to create new credit bureau reports manually (as opposed to pulling them from 
+ * This handler processes commands to create new credit bureau reports manually (as opposed to pulling them from
  * external providers via API).
  */
 @Service
@@ -43,4 +43,4 @@ public class CreateClientCreditBureauReportCommandHandler implements NewCommandS
     public CommandProcessingResult processCommand(final JsonCommand command) {
         return this.clientCreditBureauWritePlatformService.createCreditReport(command);
     }
-} 
+}

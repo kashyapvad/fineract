@@ -44,8 +44,8 @@ public enum CreditBureauReportType {
     DATA_PULL("DATA_PULL", "Customer Data Pull"),
 
     /**
-     * Manual credit report entry. Used for manually created credit reports with custom data entry.
-     * This type allows users to create credit reports without external provider integration.
+     * Manual credit report entry. Used for manually created credit reports with custom data entry. This type allows
+     * users to create credit reports without external provider integration.
      */
     MANUAL_ENTRY("MANUAL_ENTRY", "Manual Credit Report Entry");
 

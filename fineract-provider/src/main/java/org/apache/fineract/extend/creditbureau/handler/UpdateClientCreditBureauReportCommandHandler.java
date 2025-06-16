@@ -42,4 +42,4 @@ public class UpdateClientCreditBureauReportCommandHandler implements NewCommandS
     public CommandProcessingResult processCommand(final JsonCommand command) {
         return this.clientCreditBureauWritePlatformService.updateCreditReport(command);
     }
-} 
+}

@@ -48,5 +48,4 @@ public interface ClientCreditBureauReadPlatformService {
      */
     ClientCreditBureauData retrieveCreditReport(Long clientId, Long reportId);
 
-
 }

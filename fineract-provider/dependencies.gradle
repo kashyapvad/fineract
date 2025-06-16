@@ -221,3 +221,10 @@ dependencies {
     }
     testImplementation ('org.mockito:mockito-inline')
 }
+
+// =============================================================================
+// EXTEND MODULE DEPENDENCIES
+// =============================================================================
+// Include extend module specific dependencies to maintain fork-safety
+// This allows us to keep extend module dependencies separate from upstream
+apply from: 'extend-dependencies.gradle'

@@ -21,11 +21,12 @@ package org.apache.fineract.extend.common.provider;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 
 /**
  * Factory for managing credit bureau provider selection and instantiation.
@@ -45,43 +46,30 @@ public class CreditBureauProviderFactory {
 
     private final List<CreditBureauProvider> availableProviders;
 
-    @Value("${credit.bureau.provider:DECENTRO}")
+    @Value("${credit.bureau.provider}")
     private String configuredProviderName;
 
     private CreditBureauProvider activeProvider;
 
     @PostConstruct
     public void initializeProvider() {
-        log.info("Initializing credit bureau provider factory with {} available providers", availableProviders.size());
+        log.info("Initializing CreditBureauProviderFactory with {} available providers", availableProviders.size());
 
-        // Log all available providers
-        availableProviders.forEach(
-                provider -> log.info("Available provider: {} (Available: {})", provider.getProviderName(), provider.isAvailable()));
+        if (availableProviders.isEmpty()) {
+            log.warn("No credit bureau providers are available");
+            return;
+        }
 
-        // Find and validate configured provider
-        Optional<CreditBureauProvider> provider = availableProviders.stream()
-                .filter(p -> configuredProviderName.equalsIgnoreCase(p.getProviderName())).findFirst();
+        // Find provider matching configured name
+        final Optional<CreditBureauProvider> matchingProvider = availableProviders.stream()
+                .filter(provider -> configuredProviderName.equalsIgnoreCase(provider.getProviderName())).findFirst();
 
-        if (provider.isPresent()) {
-            activeProvider = provider.get();
-
-            // Validate provider configuration
-            try {
-                activeProvider.validateConfiguration();
-                log.info("Successfully initialized credit bureau provider: {} (Available: {})", activeProvider.getProviderName(),
-                        activeProvider.isAvailable());
-            } catch (Exception e) {
-                log.error("Provider {} configuration validation failed: {}", activeProvider.getProviderName(), e.getMessage());
-                throw new ProviderConfigurationException(
-                        "Failed to validate provider configuration for " + configuredProviderName + ": " + e.getMessage(), e);
-            }
+        if (matchingProvider.isPresent()) {
+            this.activeProvider = matchingProvider.get();
+            log.info("Successfully configured credit bureau provider: {}", configuredProviderName);
         } else {
-            log.error("No provider found for configured name: {}. Available providers: {}", configuredProviderName,
-                    availableProviders.stream().map(CreditBureauProvider::getProviderName).toArray());
-
-            throw new ProviderConfigurationException("No credit bureau provider found for: " + configuredProviderName
-                    + ". Available providers: "
-                    + availableProviders.stream().map(CreditBureauProvider::getProviderName).reduce((a, b) -> a + ", " + b).orElse("none"));
+            log.error("Configured provider '{}' not found among available providers: {}", configuredProviderName,
+                    availableProviders.stream().map(CreditBureauProvider::getProviderName).collect(Collectors.toList()));
         }
     }
 

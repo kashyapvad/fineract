@@ -21,124 +21,11 @@
 -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
 
-    <!-- Create m_extend_client_credit_score table for MySQL -->
-    <changeSet author="fineract" id="1" context="mysql">
+    <changeSet author="fineract" id="9002-1">
         <createTable tableName="m_extend_client_credit_score">
-            <column autoIncrement="true" name="id" type="BIGINT">
-                <constraints nullable="false" primaryKey="true"/>
-            </column>
-            <column name="credit_report_id" type="BIGINT">
-                <constraints nullable="false"/>
-            </column>
-
-            <!-- Score Details -->
-            <column name="score_model" type="VARCHAR(50)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="score_version" type="VARCHAR(20)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="score_name" type="VARCHAR(100)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="credit_score" type="INT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="score_date" type="DATE">
-                <constraints nullable="true"/>
-            </column>
-
-            <!-- Scoring Elements (factors that influenced the score) -->
-            <column name="scoring_elements" type="JSON">
-                <constraints nullable="true"/>
-            </column>
-            <column name="score_reason" type="TEXT">
-                <constraints nullable="true"/>
-            </column>
-
-            <!-- Score Metadata -->
-            <column name="score_range_min" type="INT">
-                <constraints nullable="true"/>
-            </column>
-            <column name="score_range_max" type="INT">
-                <constraints nullable="true"/>
-            </column>
-            <column name="score_percentile" type="DECIMAL(5,2)">
-                <constraints nullable="true"/>
-            </column>
-
-            <!-- Provider Specific Data -->
-            <column name="provider_score_id" type="VARCHAR(255)">
-                <constraints nullable="true"/>
-            </column>
-            <column name="provider_metadata" type="JSON">
-                <constraints nullable="true"/>
-            </column>
-
-            <!-- Audit fields -->
-            <column name="created_on_utc" type="DATETIME(6)" defaultValueComputed="CURRENT_TIMESTAMP(6)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="created_by" type="BIGINT">
-                <constraints nullable="true"/>
-            </column>
-            <column name="last_modified_on_utc" type="DATETIME(6)" defaultValueComputed="CURRENT_TIMESTAMP(6)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="last_modified_by" type="BIGINT">
-                <constraints nullable="true"/>
-            </column>
-        </createTable>
-
-        <!-- Add foreign key constraints -->
-        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
-                                 baseColumnNames="credit_report_id"
-                                 constraintName="FK_extend_credit_score_report"
-                                 referencedTableName="m_extend_client_credit_report"
-                                 referencedColumnNames="id"
-                                 onDelete="CASCADE"/>
-
-        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
-                                 baseColumnNames="created_by"
-                                 constraintName="FK_extend_credit_score_created_by_user"
-                                 referencedTableName="m_appuser"
-                                 referencedColumnNames="id"/>
-
-        <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
-                                 baseColumnNames="last_modified_by"
-                                 constraintName="FK_extend_credit_score_modified_by_user"
-                                 referencedTableName="m_appuser"
-                                 referencedColumnNames="id"/>
-
-        <!-- Add performance indexes -->
-        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_report_id">
-            <column name="credit_report_id"/>
-        </createIndex>
-
-        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_model">
-            <column name="score_model"/>
-        </createIndex>
-
-        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_value">
-            <column name="credit_score"/>
-        </createIndex>
-
-        <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_date">
-            <column name="score_date"/>
-        </createIndex>
-
-        <!-- Unique constraint to prevent duplicate scores for same model per report -->
-        <addUniqueConstraint tableName="m_extend_client_credit_score"
-                            columnNames="credit_report_id, score_model"
-                            constraintName="uk_extend_credit_score_report_model"/>
-    </changeSet>
-
-    <!-- Create m_extend_client_credit_score table for PostgreSQL -->
-    <changeSet author="fineract" id="2" context="postgresql">
-        <createTable tableName="m_extend_client_credit_score">
-            <column autoIncrement="true" name="id" type="BIGINT">
+            <column name="id" type="BIGSERIAL">
                 <constraints nullable="false" primaryKey="true"/>
             </column>
             <column name="credit_report_id" type="BIGINT">
@@ -203,7 +90,9 @@
                 <constraints nullable="true"/>
             </column>
         </createTable>
+    </changeSet>
 
+    <changeSet author="fineract" id="9002-2">
         <!-- Add foreign key constraints -->
         <addForeignKeyConstraint baseTableName="m_extend_client_credit_score"
                                  baseColumnNames="credit_report_id"
@@ -223,7 +112,9 @@
                                  constraintName="FK_extend_credit_score_modified_by_user"
                                  referencedTableName="m_appuser"
                                  referencedColumnNames="id"/>
+    </changeSet>
 
+    <changeSet author="fineract" id="9002-3">
         <!-- Add performance indexes -->
         <createIndex tableName="m_extend_client_credit_score" indexName="idx_extend_credit_score_report_id">
             <column name="credit_report_id"/>
@@ -247,33 +138,16 @@
                             constraintName="uk_extend_credit_score_report_model"/>
     </changeSet>
 
-    <!-- Add check constraints for data integrity -->
-    <changeSet author="fineract" id="3">
-        <!-- Ensure credit score is within reasonable range -->
-        <sql dbms="mysql">
-            ALTER TABLE m_extend_client_credit_score
-            ADD CONSTRAINT chk_extend_credit_score_range
-            CHECK (credit_score &gt;= 0 AND credit_score &lt;= 9999);
-        </sql>
+    <changeSet author="fineract" id="9002-4">
+        <!-- Add PostgreSQL-specific GIN indexes for JSONB columns -->
+        <sql>CREATE INDEX idx_extend_credit_score_scoring_elements_gin ON m_extend_client_credit_score USING GIN (scoring_elements);</sql>
+        <sql>CREATE INDEX idx_extend_credit_score_provider_metadata_gin ON m_extend_client_credit_score USING GIN (provider_metadata);</sql>
+    </changeSet>
 
-        <sql dbms="postgresql">
-            ALTER TABLE m_extend_client_credit_score
-            ADD CONSTRAINT chk_extend_credit_score_range
-            CHECK (credit_score &gt;= 0 AND credit_score &lt;= 9999);
-        </sql>
-
-        <!-- Ensure score percentile is valid percentage -->
-        <sql dbms="mysql">
-            ALTER TABLE m_extend_client_credit_score
-            ADD CONSTRAINT chk_extend_credit_score_percentile
-            CHECK (score_percentile IS NULL OR (score_percentile &gt;= 0 AND score_percentile &lt;= 100));
-        </sql>
-
-        <sql dbms="postgresql">
-            ALTER TABLE m_extend_client_credit_score
-            ADD CONSTRAINT chk_extend_credit_score_percentile
-            CHECK (score_percentile IS NULL OR (score_percentile &gt;= 0 AND score_percentile &lt;= 100));
-        </sql>
+    <changeSet author="fineract" id="9002-5">
+        <!-- Add check constraints for data integrity -->
+        <sql>ALTER TABLE m_extend_client_credit_score ADD CONSTRAINT chk_extend_credit_score_range CHECK (credit_score &gt;= 0 AND credit_score &lt;= 9999);</sql>
+        <sql>ALTER TABLE m_extend_client_credit_score ADD CONSTRAINT chk_extend_credit_score_percentile CHECK (score_percentile IS NULL OR (score_percentile &gt;= 0 AND score_percentile &lt;= 100));</sql>
     </changeSet>
 
 </databaseChangeLog>

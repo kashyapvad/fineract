@@ -278,8 +278,6 @@ public class DecentroProvider implements CreditBureauProvider {
         final HttpHeaders headers = createDecentroHeaders();
         final HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestPayload, headers);
 
-        
-
         try {
             final ResponseEntity<String> response = restTemplate.exchange(endpoint, HttpMethod.POST, requestEntity, String.class);
 

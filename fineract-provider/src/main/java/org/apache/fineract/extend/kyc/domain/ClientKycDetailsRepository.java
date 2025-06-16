@@ -28,33 +28,37 @@ import org.springframework.data.repository.query.Param;
  * Spring Data JPA repository for ClientKycDetails entity.
  *
  * Provides standard CRUD operations and custom query methods for client KYC details management.
+ * Enforces 1-to-1 relationship: Each client has exactly zero or one KYC record (enforced by unique constraint on client_id).
  */
 public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetails, Long>, JpaSpecificationExecutor<ClientKycDetails> {
 
     /**
      * Finds KYC details for a specific client.
+     * With 1-to-1 relationship enforced by unique constraint, this returns at most one record.
      *
-     * @param clientId
-     *            the client ID
+     * @param clientId the client ID
      * @return Optional containing KYC details if found
      */
     Optional<ClientKycDetails> findByClient_Id(Long clientId);
 
+    // Removed findLatestKycWithDataByClientId - no longer needed with 1-to-1 relationship
+
     /**
      * Counts KYC details for a specific client.
+     * With 1-to-1 relationship, this should return 0 or 1.
      *
-     * @param clientId
-     *            the client ID
-     * @return count of KYC details for the client
+     * @param clientId the client ID
+     * @return count of KYC details for the client (0 or 1)
      */
     @Query("SELECT COUNT(k) FROM ClientKycDetails k WHERE k.client.id = :clientId")
     long countByClientId(@Param("clientId") Long clientId);
 
+    // Removed duplicate-handling methods - no longer needed with 1-to-1 relationship and unique constraint
+
     /**
      * Finds KYC details by PAN number.
      *
-     * @param panNumber
-     *            the PAN number
+     * @param panNumber the PAN number
      * @return Optional containing KYC details if found
      */
     Optional<ClientKycDetails> findByPanNumber(String panNumber);
@@ -62,8 +66,7 @@ public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetai
     /**
      * Finds KYC details by Aadhaar number.
      *
-     * @param aadhaarNumber
-     *            the Aadhaar number
+     * @param aadhaarNumber the Aadhaar number
      * @return Optional containing KYC details if found
      */
     Optional<ClientKycDetails> findByAadhaarNumber(String aadhaarNumber);
@@ -71,8 +74,7 @@ public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetai
     /**
      * Finds all KYC details verified by a specific verification method.
      *
-     * @param verificationMethod
-     *            the verification method
+     * @param verificationMethod the verification method
      * @return list of KYC details with the specified verification method
      */
     @Query("SELECT k FROM ClientKycDetails k WHERE k.verificationMethod = :verificationMethod")
@@ -81,8 +83,7 @@ public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetai
     /**
      * Finds all KYC details verified by a specific provider.
      *
-     * @param verificationProvider
-     *            the verification provider
+     * @param verificationProvider the verification provider
      * @return list of KYC details verified by the provider
      */
     @Query("SELECT k FROM ClientKycDetails k WHERE k.verificationProvider = :verificationProvider")

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.extend.common.dto.CustomerDataProviderRequest;
 import org.apache.fineract.extend.common.dto.CustomerDataProviderResponse;
 import org.apache.fineract.extend.common.service.ExtendProviderService;
@@ -36,6 +37,9 @@ import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 
 /**
  * Implementation of ClientKycWritePlatformService that handles KYC verification operations.
@@ -51,7 +55,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     private final ClientRepositoryWrapper clientRepositoryWrapper;
     private final PlatformSecurityContext context;
     private final ClientKycDetailsRepositoryWrapper kycRepositoryWrapper;
-    
+
     // Common provider service for external credit bureau integrations
     private final ExtendProviderService extendProviderService;
 
@@ -61,64 +65,105 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     @Override
     @Transactional
     public CommandProcessingResult verifyKycViaApi(final JsonCommand command) {
-        // Validate provider availability using common service
-        this.extendProviderService.validateProviderAvailable();
-        
-        // Tenant isolation handled by Fineract's database-level multi-tenant architecture
-        // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
+        log.info("=== STARTING KYC API VERIFICATION ===");
+        log.info("Command ID: {}", command.commandId());
+        log.info("Client ID: {}", command.getClientId());
         
         try {
-            // Extract client ID from command
-            final Long clientId = command.getClientId();
+            log.info("Validating provider availability...");
+            // Validate provider availability using common service
+            this.extendProviderService.validateProviderAvailable();
+            log.info("Provider validation completed successfully");
 
-            // Validate client exists
-            final Client client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
-            final AppUser currentUser = this.context.authenticatedUser();
-
-            // Find existing KYC record
-            final ClientKycDetails kycDetails = this.kycRepositoryWrapper.findByClientIdThrowExceptionIfNotFound(clientId);
-
-            // Extract verification parameters
-            final String documentType = command.stringValueOfParameterNamed("documentType");
-            final String documentNumber = command.stringValueOfParameterNamed("documentNumber");
+            // Tenant isolation handled by Fineract's database-level multi-tenant architecture
+            // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
 
             try {
-                // Build provider-agnostic request for customer data pull using common service
-                final CustomerDataProviderRequest providerRequest = CustomerDataProviderRequest.builder()
-                        .referenceId(this.extendProviderService.createReferenceId("KYC", clientId)).consent(true).clientId(clientId)
-                        .customerName(client.getDisplayName()).mobileNumber(client.mobileNo()).documentType(documentType)
-                        .documentNumber(documentNumber).build();
+                // Extract client ID from command
+                final Long clientId = command.getClientId();
+                log.info("Processing KYC verification for client: {}", clientId);
 
-                // Call provider-agnostic API for customer data pull using common service
-                final CustomerDataProviderResponse providerResponse = this.extendProviderService.pullCustomerData(providerRequest);
+                // Validate client exists
+                final Client client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+                final AppUser currentUser = this.context.authenticatedUser();
 
-                if (!providerResponse.isSuccess()) {
-                    throw new RuntimeException("Customer data pull failed: " + providerResponse.getMessage());
+                // Find existing KYC record
+                final ClientKycDetails kycDetails = this.kycRepositoryWrapper.findByClientIdThrowExceptionIfNotFound(clientId);
+
+                // Extract verification parameters - for bulk verification of available documents
+                final Boolean verifyPan = command.booleanObjectValueOfParameterNamed("verifyPan");
+                final Boolean verifyAadhaar = command.booleanObjectValueOfParameterNamed("verifyAadhaar");
+                final String verificationNotes = command.stringValueOfParameterNamed("notes");
+
+                final Map<String, Boolean> allVerificationResults = new HashMap<>();
+
+                try {
+                    // Verify PAN if requested and PAN number is available
+                    if (Boolean.TRUE.equals(verifyPan) && StringUtils.isNotBlank(kycDetails.getPanNumber())) {
+                        log.info("Verifying PAN for client {}", clientId);
+
+                        final CustomerDataProviderRequest panRequest = CustomerDataProviderRequest.builder()
+                                .referenceId(this.extendProviderService.createReferenceId("KYC_PAN", clientId)).consent(true).clientId(clientId)
+                                .customerName(client.getDisplayName()).mobileNumber(client.mobileNo())
+                                .gender(client.gender() != null ? client.gender().getLabel() : null).documentType("PAN")
+                                .documentNumber(kycDetails.getPanNumber()).build();
+
+                        final CustomerDataProviderResponse panResponse = this.extendProviderService.pullCustomerData(panRequest);
+
+                        if (panResponse.getVerificationResults() != null) {
+                            allVerificationResults.putAll(panResponse.getVerificationResults());
+                        }
+
+                        log.info("PAN verification completed for client {}: {}", clientId,
+                                allVerificationResults.getOrDefault("panVerified", false));
+                    }
+
+                    // Verify Aadhaar if requested and Aadhaar number is available
+                    if (Boolean.TRUE.equals(verifyAadhaar) && StringUtils.isNotBlank(kycDetails.getAadhaarNumber())) {
+                        log.info("Verifying Aadhaar for client {}", clientId);
+
+                        final CustomerDataProviderRequest aadhaarRequest = CustomerDataProviderRequest.builder()
+                                .referenceId(this.extendProviderService.createReferenceId("KYC_AADHAAR", clientId)).consent(true)
+                                .clientId(clientId).customerName(client.getDisplayName()).mobileNumber(client.mobileNo())
+                                .gender(client.gender() != null ? client.gender().getLabel() : null).documentType("AADHAAR")
+                                .documentNumber(kycDetails.getAadhaarNumber()).build();
+
+                        final CustomerDataProviderResponse aadhaarResponse = this.extendProviderService.pullCustomerData(aadhaarRequest);
+
+                        if (aadhaarResponse.getVerificationResults() != null) {
+                            allVerificationResults.putAll(aadhaarResponse.getVerificationResults());
+                        }
+
+                        log.info("Aadhaar verification completed for client {}: {}", clientId,
+                                allVerificationResults.getOrDefault("aadhaarVerified", false));
+                    }
+
+                    // Update KYC record with API verification results
+                    kycDetails.markApiVerificationCompleted(this.extendProviderService.getProviderName(), null, currentUser,
+                            allVerificationResults, verificationNotes);
+
+                    final ClientKycDetails savedKyc = this.kycRepositoryWrapper.save(kycDetails);
+
+                    log.info("Successfully completed API verification for client {} - Results: {}", clientId, allVerificationResults);
+
+                    return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(savedKyc.getId())
+                            .withClientId(clientId).build();
+
+                } catch (Exception e) {
+                    log.error("Error during API verification: {}", e.getMessage(), e);
+                    throw new RuntimeException("API verification failed: " + e.getMessage(), e);
                 }
 
-                // Parse verification results from provider response
-                final Map<String, Boolean> verificationResults = providerResponse.getVerificationResults() != null
-                        ? providerResponse.getVerificationResults()
-                        : new HashMap<>();
-
-                // Update KYC record with API verification results
-                kycDetails.markApiVerificationCompleted(this.extendProviderService.getProviderName(),
-                        providerResponse.getRawProviderResponse(), currentUser, verificationResults);
-
-                final ClientKycDetails savedKyc = this.kycRepositoryWrapper.save(kycDetails);
-
-                log.info("Successfully completed API verification for client {} document {}", clientId, documentType);
-
-                return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(savedKyc.getId())
-                        .withClientId(clientId).build();
-
             } catch (Exception e) {
-                log.error("Error during API verification: {}", e.getMessage(), e);
-                throw new RuntimeException("API verification failed: " + e.getMessage(), e);
+                log.error("Error processing KYC API verification command: {}", e.getMessage(), e);
+                throw e;
             }
 
+        } catch (PlatformServiceUnavailableException e) {
+            log.error("Provider not available during KYC verification: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("Error processing KYC API verification command: {}", e.getMessage(), e);
+            log.error("Unexpected error during KYC API verification: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -128,7 +173,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     public CommandProcessingResult verifyKycManually(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -177,7 +222,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     public CommandProcessingResult unverifyKycManually(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -191,7 +236,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
 
             // Extract unverification parameters
             final String unverificationNotes = command.stringValueOfParameterNamed("notes");
-            
+
             // Extract specific document unverification flags
             final Boolean unverifyPan = command.booleanObjectValueOfParameterNamed("unverifyPan");
             final Boolean unverifyAadhaar = command.booleanObjectValueOfParameterNamed("unverifyAadhaar");
@@ -199,20 +244,32 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             final Boolean unverifyVoterId = command.booleanObjectValueOfParameterNamed("unverifyVoterId");
             final Boolean unverifyPassport = command.booleanObjectValueOfParameterNamed("unverifyPassport");
 
-            // Build complete verification state map - need to send all document states
+            // Build selective verification state map - only update selected documents
             final Map<String, Boolean> unverificationResults = new HashMap<>();
-            
-            // Set verification state for each document: false if selected for unverification, true if not selected
-            unverificationResults.put("panVerified", !Boolean.TRUE.equals(unverifyPan));
-            unverificationResults.put("aadhaarVerified", !Boolean.TRUE.equals(unverifyAadhaar));
-            unverificationResults.put("drivingLicenseVerified", !Boolean.TRUE.equals(unverifyDrivingLicense));
-            unverificationResults.put("voterIdVerified", !Boolean.TRUE.equals(unverifyVoterId));
-            unverificationResults.put("passportVerified", !Boolean.TRUE.equals(unverifyPassport));
-            
+
+            // Only set verification state to false for documents explicitly selected for unverification
+            // This preserves the existing state of unselected documents
+            if (Boolean.TRUE.equals(unverifyPan)) {
+                unverificationResults.put("panVerified", false);
+            }
+            if (Boolean.TRUE.equals(unverifyAadhaar)) {
+                unverificationResults.put("aadhaarVerified", false);
+            }
+            if (Boolean.TRUE.equals(unverifyDrivingLicense)) {
+                unverificationResults.put("drivingLicenseVerified", false);
+            }
+            if (Boolean.TRUE.equals(unverifyVoterId)) {
+                unverificationResults.put("voterIdVerified", false);
+            }
+            if (Boolean.TRUE.equals(unverifyPassport)) {
+                unverificationResults.put("passportVerified", false);
+            }
+
             // If no specific documents were selected, unverify all (backward compatibility)
-            final boolean hasSpecificSelection = Boolean.TRUE.equals(unverifyPan) || Boolean.TRUE.equals(unverifyAadhaar) ||
-                    Boolean.TRUE.equals(unverifyDrivingLicense) || Boolean.TRUE.equals(unverifyVoterId) || Boolean.TRUE.equals(unverifyPassport);
-            
+            final boolean hasSpecificSelection = Boolean.TRUE.equals(unverifyPan) || Boolean.TRUE.equals(unverifyAadhaar)
+                    || Boolean.TRUE.equals(unverifyDrivingLicense) || Boolean.TRUE.equals(unverifyVoterId)
+                    || Boolean.TRUE.equals(unverifyPassport);
+
             if (!hasSpecificSelection) {
                 unverificationResults.put("panVerified", false);
                 unverificationResults.put("aadhaarVerified", false);
@@ -242,7 +299,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     public CommandProcessingResult createKycDetails(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Extract client ID from command
             final Long clientId = command.getClientId();
@@ -250,6 +307,12 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             // Validate client exists and belongs to current tenant
             final Client client = this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
             final AppUser currentUser = this.context.authenticatedUser();
+
+            // Check if KYC details already exist for this client (1-to-1 relationship)
+            if (this.kycRepositoryWrapper.existsByClientId(clientId)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.client.kyc.already.exists", 
+                    "KYC details already exist for this client. Please refresh the page to see existing data or use the update operation to modify them.");
+            }
 
             // Create new KYC details record using factory method
             final ClientKycDetails kycDetails = ClientKycDetails.createNew(client);
@@ -289,8 +352,13 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             }
 
             // Set additional details if provided
+            // Handle verification notes from multiple possible field names for consistency
             if (command.hasParameter("verificationNotes")) {
                 kycDetails.setVerificationNotes(command.stringValueOfParameterNamed("verificationNotes"));
+            } else if (command.hasParameter("notes")) {
+                kycDetails.setVerificationNotes(command.stringValueOfParameterNamed("notes"));
+            } else if (command.hasParameter("manualVerificationNotes")) {
+                kycDetails.setVerificationNotes(command.stringValueOfParameterNamed("manualVerificationNotes"));
             }
             if (command.hasParameter("verificationProvider")) {
                 kycDetails.setVerificationProvider(command.stringValueOfParameterNamed("verificationProvider"));
@@ -320,7 +388,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     public CommandProcessingResult updateKycDetails(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Extract parameters
             final Long clientId = command.getClientId();
@@ -339,11 +407,12 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             }
 
             // AUDIT TRAIL: Capture original state for compliance tracking
-            final String originalState = String.format("PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s", 
-                kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), 
-                kycDetails.getPassportNumber(), kycDetails.getDrivingLicenseNumber(),
-                kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(), kycDetails.getVoterIdVerified(),
-                kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(), kycDetails.getVerificationNotes());
+            final String originalState = String.format(
+                    "PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s",
+                    kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), kycDetails.getPassportNumber(),
+                    kycDetails.getDrivingLicenseNumber(), kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(),
+                    kycDetails.getVoterIdVerified(), kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(),
+                    kycDetails.getVerificationNotes());
 
             // Update document information if provided
             if (command.hasParameter("panNumber")) {
@@ -380,8 +449,13 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             }
 
             // Update additional details if provided
+            // Handle verification notes from multiple possible field names for consistency
             if (command.hasParameter("verificationNotes")) {
                 kycDetails.setVerificationNotes(command.stringValueOfParameterNamed("verificationNotes"));
+            } else if (command.hasParameter("notes")) {
+                kycDetails.setVerificationNotes(command.stringValueOfParameterNamed("notes"));
+            } else if (command.hasParameter("manualVerificationNotes")) {
+                kycDetails.setVerificationNotes(command.stringValueOfParameterNamed("manualVerificationNotes"));
             }
             if (command.hasParameter("verificationProvider")) {
                 kycDetails.setVerificationProvider(command.stringValueOfParameterNamed("verificationProvider"));
@@ -393,14 +467,15 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             this.kycRepositoryWrapper.save(kycDetails);
 
             // AUDIT TRAIL: Log the update operation with before/after state for compliance
-            final String newState = String.format("PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s", 
-                kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), 
-                kycDetails.getPassportNumber(), kycDetails.getDrivingLicenseNumber(),
-                kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(), kycDetails.getVoterIdVerified(),
-                kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(), kycDetails.getVerificationNotes());
-            
-            log.info("AUDIT: KYC UPDATE - User: {} | Client: {} | KYC ID: {} | Command: {} | Original: [{}] | Updated: [{}]", 
-                currentUser.getId(), clientId, kycId, command.commandId(), originalState, newState);
+            final String newState = String.format(
+                    "PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s",
+                    kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), kycDetails.getPassportNumber(),
+                    kycDetails.getDrivingLicenseNumber(), kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(),
+                    kycDetails.getVoterIdVerified(), kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(),
+                    kycDetails.getVerificationNotes());
+
+            log.info("AUDIT: KYC UPDATE - User: {} | Client: {} | KYC ID: {} | Command: {} | Original: [{}] | Updated: [{}]",
+                    currentUser.getId(), clientId, kycId, command.commandId(), originalState, newState);
 
             log.info("Successfully updated KYC details {} for client {}", kycId, clientId);
 
@@ -418,7 +493,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
     public CommandProcessingResult deleteKycDetails(final JsonCommand command) {
         // Tenant isolation handled by Fineract's database-level multi-tenant architecture
         // Each tenant has separate database/schema, queries automatically routed to correct tenant DB
-        
+
         try {
             // Extract parameters
             final Long clientId = command.getClientId();
@@ -437,19 +512,19 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             }
 
             // AUDIT TRAIL: Capture state before deletion for compliance tracking
-            final String deletedState = String.format("PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s|CreatedDate:%s", 
-                kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), 
-                kycDetails.getPassportNumber(), kycDetails.getDrivingLicenseNumber(),
-                kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(), kycDetails.getVoterIdVerified(),
-                kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(), kycDetails.getVerificationNotes(),
-                kycDetails.getCreatedDate().orElse(null));
+            final String deletedState = String.format(
+                    "PAN:%s|Aadhaar:%s|VoterID:%s|Passport:%s|DL:%s|PanVerified:%s|AadhaarVerified:%s|VoterVerified:%s|PassportVerified:%s|DLVerified:%s|Notes:%s|CreatedDate:%s",
+                    kycDetails.getPanNumber(), kycDetails.getAadhaarNumber(), kycDetails.getVoterId(), kycDetails.getPassportNumber(),
+                    kycDetails.getDrivingLicenseNumber(), kycDetails.getPanVerified(), kycDetails.getAadhaarVerified(),
+                    kycDetails.getVoterIdVerified(), kycDetails.getPassportVerified(), kycDetails.getDrivingLicenseVerified(),
+                    kycDetails.getVerificationNotes(), kycDetails.getCreatedDate().orElse(null));
 
             // Delete the KYC record directly from the entity table
             this.kycRepositoryWrapper.deleteById(kycId);
 
             // AUDIT TRAIL: Log the deletion operation with complete record state for compliance
-            log.info("AUDIT: KYC DELETE - User: {} | Client: {} | KYC ID: {} | Command: {} | Deleted Record: [{}]", 
-                currentUser.getId(), clientId, kycId, command.commandId(), deletedState);
+            log.info("AUDIT: KYC DELETE - User: {} | Client: {} | KYC ID: {} | Command: {} | Deleted Record: [{}]", currentUser.getId(),
+                    clientId, kycId, command.commandId(), deletedState);
 
             log.info("Successfully deleted KYC details {} for client {}", kycId, clientId);
 

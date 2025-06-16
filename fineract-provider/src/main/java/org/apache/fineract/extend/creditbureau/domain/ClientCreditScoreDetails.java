@@ -22,12 +22,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.fineract.extend.converter.JsonAttributeConverter;
+import org.apache.fineract.extend.converter.PostgresJsonbConverter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 /**
  * Entity representing individual credit scores within a credit report.
@@ -79,8 +84,8 @@ public class ClientCreditScoreDetails extends AbstractAuditableWithUTCDateTimeCu
     private BigDecimal scorePercentile;
 
     // Scoring Elements (factors that influenced the score)
-    @Convert(converter = JsonAttributeConverter.class)
-    @Column(name = "scoring_elements", columnDefinition = "JSON")
+    @Convert(converter = PostgresJsonbConverter.class)
+    @Column(name = "scoring_elements", columnDefinition = "JSONB")
     private JsonNode scoringElements;
 
     @Column(name = "score_reason", columnDefinition = "TEXT")
@@ -90,8 +95,12 @@ public class ClientCreditScoreDetails extends AbstractAuditableWithUTCDateTimeCu
     @Column(name = "provider_score_id", length = 255)
     private String providerScoreId;
 
-    @Convert(converter = JsonAttributeConverter.class)
-    @Column(name = "provider_metadata", columnDefinition = "JSON")
+    /**
+     * Provider-specific metadata about the scoring calculation. This can include confidence scores, model versions,
+     * bureau-specific flags, etc.
+     */
+    @Convert(converter = PostgresJsonbConverter.class)
+    @Column(name = "provider_metadata", columnDefinition = "JSONB")
     private JsonNode providerMetadata;
 
     /**

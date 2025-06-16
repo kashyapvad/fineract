@@ -90,8 +90,8 @@ public class PullCreditReportRequestValidator {
         // Validate provider - optional, defaults to DECENTRO
         final String provider = this.fromApiJsonHelper.extractStringNamed("provider", element);
         if (StringUtils.isNotBlank(provider)) {
-            baseDataValidator.reset().parameter("provider").value(provider).isOneOfTheseStringValues("DECENTRO", "EXPERIAN", "CIBIL",
-                    "CRIF");
+            baseDataValidator.reset().parameter("provider").value(provider).isOneOfTheseStringValues("DECENTRO", "SUREPASS", "EXPERIAN",
+                    "CIBIL", "CRIF");
         }
 
         // Validate notes - optional field with length limit
