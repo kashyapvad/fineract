@@ -3,62 +3,72 @@ description: Extension Module Patterns
 globs: 
 alwaysApply: false
 ---
-# Extension Module Patterns
+# Backend Extension Module Patterns (MANDATORY)
 
-## Pattern: Fineract Extension Package Structure
-**CRITICAL**: Custom functionality must use `org.apache.fineract.extend.*` packages to maintain fork safety and upgradeability.
+## 🧩 Extension Package Structure (STRICT)
+**RULE**: All new functionality MUST be in `org.apache.fineract.extend.*` packages
 
-### Package Structure Requirements
-**BASE PACKAGE**: All custom code in `org.apache.fineract.extend.*`
-**FORK SAFETY**: Never modify upstream Apache Fineract core files
-**UPGRADE PATH**: Extensions survive Fineract version upgrades
+### Package Organization
+```
+org.apache.fineract.extend.{feature}/
+├── api/                    # REST controllers  
+├── domain/                 # Domain models & services
+├── data/                   # JPA entities & repositories  
+├── handler/               # Command handlers
+└── config/                # Configuration beans
+```
 
-### Extension Package Organization
-**STUDY EXAMPLES**:
-- `org.apache.fineract.extend.kyc.*` - KYC functionality organization
-- `org.apache.fineract.extend.creditbureau.*` - Credit bureau integration
-- `org.apache.fineract.extend.configuration.*` - Extension configuration
+## 🔧 Extension Configuration Patterns
 
-### Custom Service Implementation
-**PATTERN**: Create service interfaces in extension packages
-**IMPLEMENTATION**: Follow constructor injection patterns
-**REGISTRATION**: Use Spring @Service annotation for discovery
+### Conditional Bean Loading  
+**Reference**: `CustomAcmeConfiguration.java` - @ConditionalOnProperty usage
+**Pattern**: Enable/disable extensions via application properties
+```
+@ConditionalOnProperty(name = "fineract.extend.{feature}.enabled", havingValue = "true")
+```
 
-### Extension Configuration Pattern
-**STUDY**: `ExtendModuleConfiguration.java` - Extension module setup
-**CONDITIONAL BEANS**: Use `@ConditionalOnProperty` for optional features
-**MODULE ORGANIZATION**: Group related functionality in subpackages
+### Extension Module Registration
+**Reference**: Extension modules in `custom/acme/` directory structure
+**Pattern**: Self-contained extension modules with independent lifecycle
 
-### Custom Entity Pattern
-**PACKAGE**: Place entities in `org.apache.fineract.extend.[feature].data`
-**BASE CLASSES**: Extend appropriate Fineract base classes
-**AUDIT FIELDS**: Use `AbstractAuditableWithUTCDateTimeCustom` for auditable entities
+## 📡 Extension API Patterns  
 
-### Custom API Controller Pattern
-**PACKAGE**: Controllers in `org.apache.fineract.extend.[feature].api`
-**SECURITY**: Use `@PreAuthorize` annotations for permission checking
-**REST PATTERNS**: Follow existing Fineract API conventions
+### REST Controller Placement
+**Reference**: Controllers under `extend/` namespace prevent core conflicts
+**Pattern**: `/fineract-provider/api/v1/extend/{feature}/*` endpoint structure
 
-### Custom Repository Pattern
-**PACKAGE**: Repositories in `org.apache.fineract.extend.[feature].repository`
-**WRAPPER PATTERN**: Create RepositoryWrapper classes for entity validation
-**TENANT ISOLATION**: Framework handles tenant scoping automatically
+### Command Handler Integration
+**Reference**: Command handlers that integrate with core command bus
+**Pattern**: Extension commands follow same patterns as core commands
 
-### Command Handler Extension
-**PATTERN**: Place command handlers in extension packages
-**REGISTRATION**: Use `@CommandType` for automatic discovery
-**INHERITANCE**: Follow existing command handler patterns
+## 🔄 Extension Service Integration
 
-### Fork Safety Guidelines
-**UPSTREAM FILES**: Never modify files outside extend packages
-**CUSTOMIZATION**: Use extension points and configuration
-**CONTRIBUTIONS**: Core bug fixes should be contributed back to Apache
+### Service Layer Extensions  
+**Reference**: Extension services that compose with core services
+**Pattern**: Dependency injection of core services into extension services
 
-### Extension Testing Structure
-**TEST PACKAGE**: Mirror main package structure in test directories
-**TENANT CONTEXT**: Always setup tenant context in tests
-**INTEGRATION**: Test extension integration points thoroughly
+### Repository Extensions
+**Reference**: Extension repositories that extend core repository patterns  
+**Pattern**: Extension entities with proper audit field integration
 
-**ANTI-PATTERN**: Modifying upstream files, mixing custom code with core packages, bypassing extension patterns.
+## ⚠️ Extension Constraints (CRITICAL)
 
-**VERIFICATION**: `find . -path "*/extend/*" -name "*.java" | head -10`
+### What Extensions CANNOT Do:
+- Modify core Fineract classes
+- Override core Spring beans
+- Change core database schema directly  
+- Intercept core API endpoints
+
+### What Extensions MUST Do:
+- Use extension package structure
+- Follow conditional configuration
+- Implement proper rollback for database changes
+- Maintain upstream compatibility
+
+## 🎯 Agent Loading Priority
+- **Architect**: REQUIRED - System design with extension boundaries
+- **DBA**: REQUIRED - Extension-safe database patterns  
+- **Integrator**: REQUIRED - Extension integration patterns
+- **Tester**: OPTIONAL - Extension testing strategies
+- **Coder**: REQUIRED - Extension implementation patterns
+- **Verifier**: REQUIRED - Extension compliance validation

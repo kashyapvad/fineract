@@ -1,0 +1,38 @@
+---
+description: Angular Development Workflow Patterns
+globs: 
+alwaysApply: false
+---
+# Angular Development Workflow Patterns
+
+## Pre-Commit Quality Assurance
+- **Linting Requirements**: ESLint, Stylelint, and Prettier checks must pass before commit
+- **Directive Naming**: Custom directive selectors must start with "mifosx" prefix
+- **CSS Specificity**: General selectors before specific ones to prevent linting errors
+
+## Code Quality Standards
+- **Automated Formatting**: All files formatted using Prettier before commit
+- **Consistent Quotes**: Single quotes for strings, consistent across codebase
+- **SCSS Linting**: Stylelint rules enforced with targeted disable comments when necessary
+
+## Development Commands
+- **Quality Check**: `npm run lint` for comprehensive quality validation
+- **Auto-fix**: `npx stylelint "src/**/*.scss" --fix` for CSS issues
+- **Format**: `npx prettier --write .` for consistent formatting
+
+## Common Issue Resolution
+- **Directive Selectors**: Use `[mifosxMyDirective]` instead of `[appMyDirective]`
+- **CSS Specificity**: Order selectors from general to specific
+- **Font Families**: Use consistent single quotes in font-family declarations
+
+## Verification Commands
+- **Lint Check**: `npm run lint` before every commit
+- **Style Check**: `npx stylelint "src/**/*.scss"`
+- **Format Check**: `npx prettier --check .`
+
+## File References
+- **Configuration**: `.eslintrc`, `.stylelintrc`, `.prettierrc` configuration files
+- **Quality Scripts**: `package.json` lint and format scripts
+- **Pre-commit Hooks**: Git hooks configuration for automated quality checks
+- **Style Guide**: Angular style guide compliance patterns
+

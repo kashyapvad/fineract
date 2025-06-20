@@ -198,3 +198,86 @@ available_rules:
   - testing_framework_patterns
   - security_testing_patterns
   - integration_testing_patterns 
+
+# Backend KB Slice Loading Index (EXTENSION-FIRST)
+
+## 🧩 MANDATORY KB SLICES (ALL AGENTS MUST LOAD)
+# These are required for extension-first development
+mandatory_rules:
+  - extension_module_patterns         # Backend extension package structure
+  - database_migration_patterns      # Extension-safe database patterns
+
+## 👤 AGENT-SPECIFIC LOADING PRIORITIES
+
+architect:
+  priority_rules:
+    - extension_module_patterns       # REQUIRED: Extension boundaries and structure
+    - database_migration_patterns    # REQUIRED: Extension-safe database design
+    - command_handler_implementation  # Extension command patterns
+    - permission_table_mapping       # Extension security model
+  optional_rules:
+    - jpa_audit_field_patterns       # Extension entity patterns
+    - tenant_context_validation      # Multi-tenant extension patterns
+    - server_configuration           # Extension configuration patterns
+
+dba:
+  priority_rules:
+    - database_migration_patterns    # REQUIRED: Extension-safe migrations
+    - extension_module_patterns      # Extension database constraints
+    - jpa_audit_field_patterns       # Extension entity audit fields
+    - permission_table_mapping       # Extension permission patterns
+  optional_rules:
+    - command_handler_implementation  # Database command patterns
+    - tenant_context_validation      # Tenant-aware database patterns
+
+integrator:
+  priority_rules:
+    - extension_module_patterns      # REQUIRED: Extension integration boundaries
+    - command_handler_implementation  # Extension command integration
+    - server_configuration           # Extension service configuration
+  optional_rules:
+    - database_migration_patterns    # Database integration patterns
+    - permission_table_mapping       # Security integration patterns
+    - tenant_context_validation      # Tenant integration patterns
+
+tester:
+  priority_rules:
+    - extension_module_patterns      # Extension testing boundaries
+    - tenant_context_validation      # Extension tenant testing
+    - command_handler_implementation  # Extension command testing
+  optional_rules:
+    - database_migration_patterns    # Database testing patterns
+    - permission_table_mapping       # Security testing patterns
+    - jpa_audit_field_patterns       # Entity testing patterns
+
+coder:
+  priority_rules:
+    - extension_module_patterns      # REQUIRED: Extension implementation structure
+    - command_handler_implementation  # Extension command implementation
+    - jpa_audit_field_patterns       # Extension entity implementation
+  optional_rules:
+    - database_migration_patterns    # Database implementation patterns
+    - permission_table_mapping       # Security implementation patterns
+    - tenant_context_validation      # Multi-tenant implementation
+    - server_configuration           # Extension configuration
+
+verifier:
+  priority_rules:
+    - extension_module_patterns      # REQUIRED: Extension compliance validation
+    - database_migration_patterns    # Migration safety validation
+    - command_handler_implementation  # Extension pattern compliance
+    - permission_table_mapping       # Security compliance validation
+  optional_rules:
+    - jpa_audit_field_patterns       # Entity compliance patterns
+    - tenant_context_validation      # Tenant compliance patterns
+    - server_configuration           # Configuration compliance
+
+## 🔍 KB SLICE DESCRIPTIONS
+kb_descriptions:
+  extension_module_patterns: "Backend extension package structure, boundaries, and constraints"
+  database_migration_patterns: "Extension-safe database migrations with rollback support"
+  command_handler_implementation: "Extension command handler patterns and integration"
+  permission_table_mapping: "Extension permission patterns and security model"
+  jpa_audit_field_patterns: "Extension entity patterns with audit field integration"
+  tenant_context_validation: "Multi-tenant patterns for extension development"
+  server_configuration: "Extension configuration and conditional bean patterns" 

@@ -1,0 +1,37 @@
+---
+description: Angular Validation Service Patterns
+globs: 
+alwaysApply: false
+---
+# Angular Validation Service Patterns
+
+## Validation Service Architecture
+- **Centralized Logic**: Complex form validation implemented in separate validation services
+- **Single Responsibility**: Validation services focused solely on validation logic
+- **Reusability**: Validation logic reusable across multiple form components
+
+## Service Implementation Patterns
+- **Injectable Singleton**: `@Injectable({ providedIn: 'root' })` for singleton validation services
+- **Form Creation**: Centralized form creation with validation in service methods
+- **Custom Validators**: Properly typed custom validators with clear interfaces
+
+## Error Message Handling
+- **Centralized Messages**: Error message handling centralized in validation services
+- **Internationalization**: Error messages support i18n translation patterns
+- **Context-Aware**: Error messages provide context and recovery guidance
+
+## Financial Data Validation
+- **Currency Precision**: Validation for financial amounts with proper decimal precision
+- **Date Formatting**: Date validation using Angular DatePipe patterns
+- **Required Fields**: Consistent required field validation across financial forms
+
+## Verification Commands
+- **Validation Services**: `grep -rn "ValidationService" src/app/extend/`
+- **Custom Validators**: `grep -rn "Validators\." src/app/`
+- **Form Patterns**: `grep -rn "FormBuilder\|FormGroup" src/app/`
+
+## File References
+- **Service Examples**: `CreditReportValidationService.ts` patterns for validation implementation
+- **Form Components**: Component usage of validation services
+- **Custom Validators**: Custom validator implementations and interfaces
+- **Error Handling**: Centralized error message and handling patterns

@@ -1,0 +1,87 @@
+# Fineract Frontend Knowledge Base Index
+# Maps Angular/UI KB slices to agents for efficient rule loading
+
+# Frontend KB Slice Loading Index (EXTENSION-FIRST)
+
+## 🧩 MANDATORY KB SLICES (ALL AGENTS MUST LOAD)
+# These are required for extension-first frontend development
+mandatory_rules:
+  - angular_extension_patterns        # Frontend extension directory structure
+
+## 👤 AGENT-SPECIFIC LOADING PRIORITIES
+
+architect:
+  priority_rules:
+    - angular_extension_patterns       # REQUIRED: Extension boundaries and structure
+    - angular_feature_module_patterns  # Extension module architecture
+    - angular_material_theming         # Extension UI consistency
+    - angular_validation_patterns      # Extension form patterns
+  optional_rules:
+    - angular_development_workflow     # Extension development standards
+    - angular_financial_formatting    # Extension financial data display
+
+integrator:
+  priority_rules:
+    - angular_extension_patterns       # REQUIRED: Extension integration boundaries
+    - angular_feature_module_patterns  # Extension module integration
+    - angular_development_workflow     # Extension integration workflow
+  optional_rules:
+    - angular_validation_patterns      # Form integration patterns
+    - angular_material_theming         # UI integration patterns
+    - angular_financial_formatting    # Data display integration
+
+tester:
+  priority_rules:
+    - angular_extension_patterns       # Extension testing boundaries
+    - angular_feature_module_patterns  # Extension module testing
+    - angular_validation_patterns      # Extension form testing
+  optional_rules:
+    - angular_development_workflow     # Extension testing workflow
+    - angular_material_theming         # UI testing patterns
+    - angular_financial_formatting    # Data display testing
+
+coder:
+  priority_rules:
+    - angular_extension_patterns       # REQUIRED: Extension implementation structure
+    - angular_feature_module_patterns  # Extension module implementation
+    - angular_validation_patterns      # Extension form implementation
+    - angular_material_theming         # Extension UI implementation
+  optional_rules:
+    - angular_development_workflow     # Extension development practices
+    - angular_financial_formatting    # Extension data formatting
+
+verifier:
+  priority_rules:
+    - angular_extension_patterns       # REQUIRED: Extension compliance validation
+    - angular_feature_module_patterns  # Extension module compliance
+    - angular_development_workflow     # Extension workflow compliance
+  optional_rules:
+    - angular_validation_patterns      # Form compliance patterns
+    - angular_material_theming         # UI compliance patterns
+    - angular_financial_formatting    # Data formatting compliance
+
+## 🔍 KB SLICE DESCRIPTIONS
+kb_descriptions:
+  angular_extension_patterns: "Frontend extension directory structure, routing, and constraints"
+  angular_feature_module_patterns: "Lazy-loaded extension modules and component patterns"
+  angular_material_theming: "Extension UI theming and Material Design integration"
+  angular_validation_patterns: "Extension form validation and error handling patterns"
+  angular_development_workflow: "Extension development standards and best practices"
+  angular_financial_formatting: "Extension financial data display and formatting patterns"
+
+# Available Frontend KB Slices
+available_rules:
+  - angular_extension_patterns
+  - angular_feature_module_patterns
+  - angular_material_theming
+  - angular_validation_patterns
+  - angular_development_workflow
+  - angular_financial_formatting
+
+# Usage instructions for agents
+# When working on frontend/UI tasks:
+#   1. Check their agent_rules section for relevant Angular patterns
+#   2. Load priority_rules first (3-4 max for frontend)
+#   3. Load secondary_rules only if task requires them
+#   4. Each rule file is under 500 tokens for quick loading
+#   5. Focus on patterns specific to current UI task requirements 

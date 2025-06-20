@@ -1,0 +1,37 @@
+---
+description: Angular Feature Module Patterns
+globs: 
+alwaysApply: false
+---
+# Angular Feature Module Patterns
+
+## Feature Module Structure Organization
+- **Standard Structure**: Components, services, routing properly organized in feature directories
+- **Module Boundaries**: Clear feature boundaries with minimal cross-feature dependencies
+- **Lazy Loading**: Feature modules implement lazy loading with proper route configuration
+
+## Core Module Architecture
+- **Singleton Services**: Core module provides essential singleton services for entire application
+- **HTTP Interceptors**: Properly configured interceptor chain for auth, error handling, progress
+- **Shell Components**: Consistent layout and navigation structure management
+
+## Shared Module Patterns
+- **Reusable Components**: Shared components generic and configurable through inputs/outputs
+- **Export Strategy**: Careful export management to prevent circular dependencies
+- **Material Integration**: Angular Material properly integrated and themed
+
+## Service Layer Patterns
+- **Domain Separation**: Services organized by business domain with clear responsibilities
+- **Validation Services**: Centralized validation logic in dedicated services
+- **Form Autofill**: Complex form population logic in separate autofill services
+
+## Verification Commands
+- **Module Structure**: `find src/app -name "*.module.ts" | head -10`
+- **Lazy Loading**: `grep -rn "loadChildren" src/app/`
+- **Service Patterns**: `grep -rn "ValidationService" src/app/`
+
+## File References
+- **Feature Modules**: Feature module implementations in `src/app/` subdirectories
+- **Core Module**: `src/app/core/` directory structure and service organization
+- **Shared Module**: `src/app/shared/` component and service patterns
+- **Routing Configuration**: Lazy loading and route guard implementations

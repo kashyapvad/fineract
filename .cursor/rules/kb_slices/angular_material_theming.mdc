@@ -1,0 +1,37 @@
+---
+description: Custom Theme Architecture
+globs: 
+alwaysApply: false
+---
+# Angular Material Theming Patterns
+
+## Custom Theme Architecture
+- **Brand Integration**: Custom color palettes generated following Material guidelines
+- **Multi-Mode Support**: Light and dark theme support with proper switching
+- **Accessibility**: Color contrast ratios meeting WCAG 2.1 AA requirements
+
+## Component Theme Consistency
+- **Centralized Theming**: Component theming centralized and consistently applied
+- **Theme Mixins**: Component-specific theme mixins properly implemented
+- **Color Usage**: Consistent theme color usage across all components
+
+## Multi-Tenant Theming
+- **Runtime Switching**: Theme system supports tenant-specific customization with runtime switching
+- **Asset Management**: Tenant branding assets properly managed with fallbacks
+- **Configuration**: Tenant themes configurable without code changes
+
+## Typography System
+- **Material Integration**: Custom fonts properly integrated with Material typography system
+- **Financial Data**: Typography optimized for financial data display and readability
+- **Responsive**: Typography responsive across different screen sizes
+
+## Verification Commands
+- **Theme Files**: `find src/theme -name "*.scss" | head -5`
+- **Material Usage**: `grep -rn "@angular/material" src/app/`
+- **Theme Variables**: `grep -rn "mat-palette" src/theme/`
+
+## File References
+- **Theme Configuration**: `src/theme/` directory with SCSS theme files
+- **Material Modules**: Material module imports and configuration
+- **Component Theming**: Component-specific theme implementations
+- **Brand Assets**: Tenant-specific logo and asset management patterns

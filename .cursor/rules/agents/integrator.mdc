@@ -198,15 +198,29 @@ End-to-end validation specialist responsible for final integration testing using
 - **End-to-End Success**: Complete workflows function as expected
 
 ## 🔄 KB SLICE LOADING INSTRUCTIONS
-**Priority KB Slices (Load First)**:
-- server_configuration.mdc - For server setup and endpoint information
-- api_contract_patterns.mdc - For API response validation
-- database_configuration.mdc - For database connection validation
+**For Backend Tasks - Priority KB Slices (Load First)**:
+- service_layer_patterns.mdc - For service implementation patterns
+- repository_wrapper_patterns.mdc - For data access patterns
+- optional_bean_configuration.mdc - For conditional loading
+- server_configuration.mdc - For server setup and endpoints
 
-**Secondary KB Slices (Load if Relevant)**:
-- ui_backend_integration_patterns.mdc - For frontend-backend alignment
-- authentication_patterns.mdc - For security validation
-- error_handling_patterns.mdc - For error scenario testing
+**For Backend Tasks - Secondary KB Slices (Load if Relevant)**:
+- command_handler_implementation.mdc - If integrating with command handlers
+- tenant_context_validation.mdc - If tenant-aware services needed
+- extension_module_patterns.mdc - If creating extensible integrations
+
+**For Frontend Tasks - Priority KB Slices (Load First)**:
+- angular_extension_patterns.mdc - For fork-safe UI integration
+- angular_feature_module_patterns.mdc - For Angular module integration
+- angular_material_theming.mdc - For UI component integration
+
+**For Frontend Tasks - Secondary KB Slices (Load if Relevant)**:
+- angular_validation_patterns.mdc - If integrating form validation
+- angular_financial_formatting.mdc - If handling financial data display
+
+**KB Index References**:
+- Backend tasks: Check `.cursor/rules/kb_slices/kb_index.yaml` 
+- Frontend tasks: Check `.cursor/rules/kb_slices/kb_index_frontend.yaml`
 
 ## 🤝 HANDOFF PROTOCOL
 **ACTIVATION**: Only after both backend and UI implementation are complete

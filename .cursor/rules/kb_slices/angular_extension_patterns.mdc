@@ -1,0 +1,118 @@
+---
+description: Angular Extension Patterns
+globs: 
+alwaysApply: false
+---
+# Angular Extension Patterns (MANDATORY)
+
+## 🧩 Extension Directory Structure (STRICT)
+**RULE**: All new functionality MUST be in `src/app/extend/` directory
+
+### Directory Organization
+```
+src/app/extend/
+├── {feature}/
+│   ├── {feature}.module.ts       # Lazy-loaded feature module
+│   ├── {feature}-routing.module.ts # Feature routing
+│   ├── pages/                    # Page components
+│   ├── components/              # Reusable components  
+│   ├── services/               # Feature services
+│   ├── models/                 # TypeScript interfaces
+│   └── {feature}.component.ts   # Main feature component
+└── shared/                      # Shared extension utilities
+```
+
+## 🔧 Extension Module Patterns
+
+### Lazy-Loaded Feature Modules
+**Reference**: `extend/{feature}/{feature}.module.ts` structure
+**Pattern**: Each extension as independent lazy-loaded module
+```typescript
+@NgModule({
+  declarations: [/* extension components */],
+  imports: [CommonModule, SharedModule, /* feature imports */],
+  providers: [/* extension services */]
+})
+```
+
+### Extension Routing Integration
+**Reference**: Main app-routing integration with extension routes
+**Pattern**: Extension routes under `/extend/{feature}` path
+```typescript
+{
+  path: 'extend/{feature}',
+  loadChildren: () => import('./extend/{feature}/{feature}.module').then(m => m.{Feature}Module)
+}
+```
+
+## 📱 Extension Component Patterns
+
+### Extension Page Components
+**Reference**: Extension pages that integrate with core layout
+**Pattern**: Extension pages use shared navigation and theming
+
+### Extension Service Integration
+**Reference**: Extension services that call core APIs and extension APIs
+**Pattern**: Services handle both core and extension endpoint communication
+
+## 🎨 Extension Styling Patterns
+
+### Theme Integration
+**Reference**: Extension components using Angular Material theming
+**Pattern**: Extensions inherit core theme but can add custom styles
+
+### SCSS Organization
+**Reference**: Extension-specific SCSS files in component directories
+**Pattern**: Scoped styles that don't interfere with core application
+
+## 🔄 Extension Data Flow
+
+### State Management
+**Reference**: Extension components managing local state
+**Pattern**: Extensions can use core shared services for common data
+
+### API Integration
+**Reference**: Extension services calling `/api/v1/extend/{feature}` endpoints
+**Pattern**: Extension APIs follow same patterns as core APIs
+
+## 📋 Extension Form Patterns
+
+### Form Components
+**Reference**: Extension forms using Angular Reactive Forms
+**Pattern**: Extension forms follow core validation patterns
+
+### Data Validation
+**Reference**: Extension form validation using core validation services
+**Pattern**: Extensions use shared validation utilities
+
+## ⚠️ Extension Constraints (CRITICAL)
+
+### What Extensions CANNOT Do:
+- Modify core Angular components
+- Override core services globally
+- Change core routing structure
+- Modify shared theme variables directly
+
+### What Extensions MUST Do:
+- Use extension directory structure
+- Implement lazy-loaded modules
+- Follow core naming conventions
+- Maintain responsive design patterns
+
+## 🔗 Extension Navigation Integration
+
+### Menu Integration
+**Reference**: Extension menu items added to core navigation
+**Pattern**: Extensions register navigation items with core navigation service
+
+### Breadcrumb Integration
+**Reference**: Extension pages with proper breadcrumb hierarchy  
+**Pattern**: Extensions follow core breadcrumb patterns
+
+## 🎯 Agent Loading Priority
+- **Architect**: REQUIRED - Extension UI/UX boundaries
+- **DBA**: OPTIONAL - Frontend data patterns
+- **Integrator**: REQUIRED - Frontend-backend extension integration
+- **Tester**: REQUIRED - Extension UI testing patterns
+- **Coder**: REQUIRED - Angular extension implementation
+- **Verifier**: REQUIRED - Extension compliance validation

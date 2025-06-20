@@ -54,3 +54,133 @@ alwaysApply: false
 **ANTI-PATTERN**: Generic `addCheckConstraint` (XML parsing errors), missing license headers, wrong formatting.
 
 **VERIFICATION**: `grep -rn "constraintName.*FK_" fineract-provider/src/main/resources/sql/migrations/`
+
+# Database Migration Patterns (EXTENSION-SAFE)
+
+## 🧩 Extension-Safe Migration Structure (MANDATORY)
+**RULE**: Extension migrations MUST be reversible and non-breaking
+
+### Migration File Organization
+```
+fineract-provider/src/main/resources/sql/migrations/tenant/
+├── mod_db_extension_{feature}_YYYYMMDD.sql    # Extension-specific migrations
+└── mod_db_extension_{feature}_YYYYMMDD_rollback.sql # Rollback scripts
+```
+
+## 🔧 Extension Migration Patterns
+
+### Table Creation for Extensions
+**Reference**: Extension tables with proper prefixes to avoid conflicts
+**Pattern**: Table names must start with `ext_` prefix
+```sql
+CREATE TABLE `ext_{feature}_{table_name}` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `created_by` BIGINT NOT NULL,
+  `created_on_utc` DATETIME NOT NULL,
+  `last_modified_by` BIGINT NOT NULL,
+  `last_modified_on_utc` DATETIME NOT NULL,
+  -- Extension-specific columns
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Foreign Key Constraints for Extensions
+**Reference**: Extension tables linking to core tables safely
+**Pattern**: Foreign keys to core tables with proper cascading
+```sql
+ALTER TABLE `ext_{feature}_{table_name}` 
+ADD CONSTRAINT `FK_ext_{feature}_{table_name}_client_id` 
+FOREIGN KEY (`client_id`) REFERENCES `m_client` (`id`);
+```
+
+## 📊 Extension Permission Patterns
+
+### Permission Table Integration
+**Reference**: Extension permissions following core permission patterns
+**Pattern**: Extension permissions under `extend_{feature}` namespace
+```sql
+INSERT INTO `m_permission` (`grouping`, `code`, `entity_name`, `action_name`, `can_maker_checker`) 
+VALUES ('extend_{feature}', 'READ_EXTEND_{FEATURE}', 'EXTEND_{FEATURE}', 'READ', 0);
+```
+
+### Role Permission Assignment
+**Reference**: Extension permissions assigned to appropriate roles
+**Pattern**: Extension permissions follow core role assignment patterns
+
+## 🔄 Extension Audit Field Integration
+
+### Audit Fields for Extension Tables
+**Reference**: Extension tables with standard audit fields
+**Pattern**: All extension tables must have audit field integration
+```sql
+-- Standard audit fields (REQUIRED)
+`created_by` BIGINT NOT NULL,
+`created_on_utc` DATETIME NOT NULL,
+`last_modified_by` BIGINT NOT NULL,
+`last_modified_on_utc` DATETIME NOT NULL
+```
+
+### Tenant Context Integration
+**Reference**: Extension tables inheriting tenant context from framework
+**Pattern**: No explicit tenant_id needed - framework handles tenant isolation
+
+## 🗂️ Extension Index Patterns
+
+### Performance Indexes for Extensions
+**Reference**: Extension indexes following core naming conventions
+**Pattern**: Extension indexes with proper naming
+```sql
+CREATE INDEX `idx_ext_{feature}_{table_name}_{column_name}` 
+ON `ext_{feature}_{table_name}` (`column_name`);
+```
+
+### Composite Indexes for Extension Queries
+**Reference**: Extension composite indexes for common query patterns
+**Pattern**: Extension indexes optimized for extension-specific queries
+
+## ⚠️ Extension Migration Constraints (CRITICAL)
+
+### What Extension Migrations CANNOT Do:
+- Modify core Fineract tables structure
+- Drop or alter core indexes
+- Change core table constraints
+- Modify core permission structure
+
+### What Extension Migrations MUST Do:
+- Use `ext_` table name prefix
+- Include proper rollback scripts
+- Follow audit field patterns
+- Maintain referential integrity with core tables
+
+## 🔄 Extension Rollback Patterns
+
+### Rollback Script Requirements
+**Reference**: Every extension migration must have corresponding rollback
+**Pattern**: Rollback scripts reverse all migration changes
+```sql
+-- Rollback script structure
+DROP TABLE IF EXISTS `ext_{feature}_{table_name}`;
+DELETE FROM `m_permission` WHERE `code` LIKE 'READ_EXTEND_{FEATURE}%';
+```
+
+### Data Migration Safety
+**Reference**: Extension data migrations with proper backup strategies
+**Pattern**: Extension data can be migrated without affecting core data
+
+## 🧪 Extension Migration Testing
+
+### Migration Validation
+**Reference**: Extension migrations tested in isolation
+**Pattern**: Extension migrations don't break core functionality
+
+### Rollback Testing
+**Reference**: Extension rollback scripts tested for completeness
+**Pattern**: Rollback leaves system in clean state
+
+## 🎯 Agent Loading Priority
+- **Architect**: OPTIONAL - Database design understanding
+- **DBA**: REQUIRED - Extension-safe migration patterns
+- **Integrator**: OPTIONAL - Migration integration patterns
+- **Tester**: REQUIRED - Migration testing strategies
+- **Coder**: OPTIONAL - Database structure understanding  
+- **Verifier**: REQUIRED - Migration compliance validation

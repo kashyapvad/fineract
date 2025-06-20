@@ -1,0 +1,37 @@
+---
+description: Angular Financial Data Formatting Patterns
+globs: 
+alwaysApply: false
+---
+# Angular Financial Data Formatting Patterns
+
+## Date Formatting Standards
+- **Angular DatePipe**: Use `{{ date | date:'format' }}` instead of JavaScript Date methods
+- **Consistent Formats**: `mediumDate`, `short`, `dd/MM/yyyy` for different contexts
+- **Locale Support**: Date pipes respect Angular locale configuration
+
+## Financial Input Formatting
+- **Currency Display**: Locale-specific currency formatting with proper precision
+- **Decimal Precision**: Appropriate precision for financial calculations
+- **Number Validation**: Input fields prevent invalid characters for financial data
+
+## Custom Pipe Patterns
+- **Financial Pipes**: `@Pipe({ name: 'financialDate' })` for specialized formats
+- **Service Integration**: DatePipe injection in services for programmatic formatting
+- **Template Usage**: Consistent pipe usage across all date/currency displays
+
+## Anti-Patterns to Avoid
+- **Manual Formatting**: Avoid `new Date().toLocaleDateString()` in components
+- **String Manipulation**: No manual date string concatenation or manipulation
+- **Floating Point**: Use decimal libraries instead of floating-point for financial calculations
+
+## Verification Commands
+- **Date Usage**: `grep -rn "| date" src/app/ | wc -l`
+- **Anti-Pattern Check**: `grep -rn "new Date\|toDateString" src/app/`
+- **Pipe Usage**: `grep -rn "@Pipe" src/app/`
+
+## File References
+- **Pipe Implementations**: Custom financial and date pipe examples
+- **Service Formatting**: DatePipe usage in service classes
+- **Template Patterns**: Date and currency formatting in component templates
+- **Locale Configuration**: Angular locale setup for international formatting

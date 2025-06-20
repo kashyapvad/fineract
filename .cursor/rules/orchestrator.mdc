@@ -17,8 +17,8 @@ alwaysApply: true
 - ❌ STOP & RELOAD: Re-read my agent.mdc file completely
 
 **Q3: Have I loaded my required Fineract KB slices?**
-- ✅ Valid: "Yes, I've loaded 3-5 relevant .mdc files from .cursor/kb_slices/"
-- ❌ STOP & RELOAD: Check kb_index.yaml for my agent_rules and load priority_rules
+- ✅ Valid: "Yes, I've loaded 3-5 relevant .mdc files from .cursor/rules/kb_slices/"
+- ❌ STOP & RELOAD: Check kb_index.yaml (backend) or kb_index_frontend.yaml (frontend) for agent_rules and load priority_rules
 
 **Q4: Do I understand the current task context?**
 - ✅ Valid: "Yes, I've read audit_trail/handoff.md and understand my specific task"
@@ -36,7 +36,7 @@ alwaysApply: true
 
 **Q6: Do I still have my Fineract-specific patterns clear?**
 - ✅ Continue: "Yes, I remember the key patterns from my loaded KB slices"
-- ❌ RELOAD: Re-read my priority KB slices from .cursor/kb_slices/
+- ❌ RELOAD: Re-read my priority KB slices from .cursor/rules/kb_slices/
 
 **Q7: Am I following my role's quality gates?**
 - ✅ Continue: "Yes, I'm meeting my specific quality requirements"
@@ -69,12 +69,23 @@ alwaysApply: true
 - **Database only**: Schema/migrations/data
 - **STOP**: If unclear → Analyze request details
 
+### Q5: Is this an extension or core modification? (CRITICAL)
+- **EXTENSION**: New feature/functionality extending upstream Fineract
+- **CORE**: Modifying existing Fineract core functionality
+- **STOP**: If CORE → Challenge and propose extension alternative first
+
 ## 🔍 COMPONENT ANALYSIS (For Fresh Prompts)
 **Indicators:**
 - New pages/forms/buttons/modals = Frontend
 - APIs/endpoints/database/auth = Backend  
 - UI components + data operations = Full-stack
 - Schema changes/migrations = Database (DBA needed)
+
+**Extension Analysis (MANDATORY):**
+- Backend: Must use org.apache.fineract.extend.* packages
+- Frontend: Must use extend/ directory structure with lazy-loaded modules
+- Database: Extension-safe migrations with proper rollback
+- APIs: Extension endpoints that don't conflict with core routes
 
 ## ⚡ ACTIONS BY GATEWAY ANSWERS
 
@@ -117,6 +128,14 @@ Action: Open new tab → "Load .cursor/rules/agents/[name].mdc and relevant KB s
 ```
 
 ## ⚖️ ENFORCED GENERAL PRACTICES
+
+### 🧩 Extension-First Architecture (MANDATORY)
+- **Backend Extensions**: All new functionality in org.apache.fineract.extend.* packages
+- **Frontend Extensions**: All new features in src/app/extend/ with lazy-loaded modules
+- **Non-Intrusive**: Extensions must not modify core Fineract code
+- **Upstream Compatible**: Extensions must survive upstream updates
+- **Modular Design**: Extensions can be enabled/disabled independently
+- **Clean Interfaces**: Extensions interact with core through defined APIs only
 
 ### 🏗️ Architecture Enforcement
 - **SOLID Principles**: Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion
