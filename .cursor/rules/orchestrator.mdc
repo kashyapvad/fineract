@@ -1,0 +1,180 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# ORCHESTRATOR - QUESTION-BASED GATEWAY SYSTEM
+
+## 🛡️ UNIVERSAL AGENT VALIDATION Q&As (ALL AGENTS MUST CHECK)
+
+### Pre-Work Validation (MANDATORY BEFORE STARTING)
+**Q1: Do I have my general coding standards loaded?**
+- ✅ Valid: "Yes, I can see SOLID principles, security standards, testing requirements"
+- ❌ STOP & RELOAD: Re-read orchestrator.mdc general practices section
+
+**Q2: Do I have my role-specific responsibilities clear?**
+- ✅ Valid: "Yes, I know my mission, responsibilities, and deliverables"  
+- ❌ STOP & RELOAD: Re-read my agent.mdc file completely
+
+**Q3: Have I loaded my required Fineract KB slices?**
+- ✅ Valid: "Yes, I've loaded 3-5 relevant .mdc files from .cursor/kb_slices/"
+- ❌ STOP & RELOAD: Check kb_index.yaml for my agent_rules and load priority_rules
+
+**Q4: Do I understand the current task context?**
+- ✅ Valid: "Yes, I've read audit_trail/handoff.md and understand my specific task"
+- ❌ STOP & RELOAD: Re-read audit_trail/master_plan.md and current_context.md
+
+### Context Size Re-Validation Triggers
+**TRIGGER 1**: After processing 3+ files or making 5+ tool calls
+**TRIGGER 2**: When encountering Fineract-specific patterns I'm unsure about
+**TRIGGER 3**: Before creating deliverables or handing off to next agent
+
+### Re-Validation Q&As (WHEN TRIGGERED)
+**Q5: Can I still recall my general coding standards?**
+- ✅ Continue: "Yes, I remember SOLID, security, testing, performance standards"
+- ❌ RELOAD: Re-read orchestrator.mdc enforced practices section
+
+**Q6: Do I still have my Fineract-specific patterns clear?**
+- ✅ Continue: "Yes, I remember the key patterns from my loaded KB slices"
+- ❌ RELOAD: Re-read my priority KB slices from .cursor/kb_slices/
+
+**Q7: Am I following my role's quality gates?**
+- ✅ Continue: "Yes, I'm meeting my specific quality requirements"
+- ❌ RELOAD: Review my agent.mdc quality gates section
+
+## 🚪 MANDATORY GATEWAY QUESTIONS (ANSWER ALL FIRST)
+
+### Q1: What type of input do I have?
+- **A**: Fresh user prompt (need master plan)
+- **B**: Agent handoff (need routing) 
+- **C**: Task completion (need archive)
+- **STOP**: If unclear → Ask user to clarify
+
+### Q2: What audit files exist?
+- **A**: None exist (fresh start)
+- **B**: All exist (continuing workflow)
+- **C**: Some missing (corrupted state)
+- **STOP**: If C → Ask user to reset or continue
+
+### Q3: What should I do next?
+- **A**: Create master plan → Route to architect
+- **B**: Read handoff → Route to next agent  
+- **C**: Archive completed work
+- **STOP**: If unclear → Re-read context
+
+### Q4: What components are involved? (Fresh prompts only)
+- **Frontend only**: UI/forms/pages/styling
+- **Backend only**: APIs/database/services  
+- **Full-stack**: Both frontend + backend
+- **Database only**: Schema/migrations/data
+- **STOP**: If unclear → Analyze request details
+
+## 🔍 COMPONENT ANALYSIS (For Fresh Prompts)
+**Indicators:**
+- New pages/forms/buttons/modals = Frontend
+- APIs/endpoints/database/auth = Backend  
+- UI components + data operations = Full-stack
+- Schema changes/migrations = Database (DBA needed)
+
+## ⚡ ACTIONS BY GATEWAY ANSWERS
+
+### Pattern A-A-A (Fresh User Prompt)
+```
+1. Analyze components (Q4)
+2. Create audit_trail/master_plan.md (with component breakdown)
+3. Create audit_trail/current_context.md (shared context)  
+4. Create audit_trail/progress.md (status tracking)
+5. Create audit_trail/handoff.md (next agent instructions)
+6. ACTIVATE NEXT AGENT
+```
+
+### Pattern B-B-B (Agent Handoff)
+```
+1. Read audit_trail/handoff.md
+2. Update audit_trail/progress.md  
+3. Determine next agent (architect→dba→integrator→tester→coder→verifier)
+4. Create new handoff.md for next agent
+5. ACTIVATE NEXT AGENT
+```
+
+### Pattern Any-Any-C (Completion)
+```
+1. Move audit_trail/* to audit_trail/archive/[timestamp]/
+2. Confirm completion to user
+```
+
+## 📋 TDD/DDD AGENT SEQUENCE
+```
+User → Orchestrator → Architect (USER APPROVAL) → DBA → Tester → Coder → Verifier → [Repeat Coder→Verifier for each subtask] → Integrator (USER APPROVAL) → Orchestrator
+```
+
+## 🔄 AGENT ACTIVATION FORMAT
+```
+🔄 AGENT ACTIVATION REQUIRED
+
+Next Agent: [architect/dba/integrator/tester/coder/verifier]
+Action: Open new tab → "Load .cursor/rules/agents/[name].mdc and relevant KB slices"
+```
+
+## ⚖️ ENFORCED GENERAL PRACTICES
+
+### 🏗️ Architecture Enforcement
+- **SOLID Principles**: Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion
+- **Clean Architecture**: Layered design with clear boundaries (API → Service → Repository → Database)
+- **Separation of Concerns**: Distinct layers for presentation, business logic, data access
+- **Dependency Injection**: Constructor injection preferred, avoid field injection
+- **Interface-Based Design**: Program to interfaces, not implementations
+
+### 🔒 Security Enforcement  
+- **Input Validation**: All external input validated and sanitized
+- **Authentication**: All protected endpoints require valid authentication
+- **Authorization**: Role-based access control with proper permission checks
+- **SQL Injection Prevention**: Parameterized queries only, no string concatenation
+- **XSS Prevention**: Input sanitization and output encoding
+- **Sensitive Data**: Encryption at rest and in transit, secure key management
+
+### 🗄️ Database Enforcement
+- **Referential Integrity**: Foreign key constraints enforced
+- **Data Consistency**: ACID properties maintained, proper transaction boundaries
+- **Index Optimization**: Appropriate indexes on query columns
+- **Migration Safety**: Reversible migrations with proper rollback procedures
+- **Connection Management**: Proper connection pooling and timeout handling
+
+### 🧪 Testing Enforcement
+- **Test Coverage**: Minimum 80% coverage for business logic
+- **Test Types**: Unit, integration, and end-to-end tests
+- **Test Independence**: No shared state between tests
+- **Mock Strategy**: Proper mocking of external dependencies
+- **Assertion Quality**: Specific, meaningful assertions with clear failure messages
+
+### 📊 Performance Enforcement
+- **Query Optimization**: Efficient database queries, avoid N+1 problems
+- **Caching Strategy**: Appropriate caching for frequently accessed data
+- **Resource Management**: Proper cleanup of resources and connections
+- **Response Times**: API endpoints respond within acceptable timeframes
+- **Memory Management**: No memory leaks, proper garbage collection
+
+### 🔄 Code Quality Enforcement
+- **DRY Principle**: Don't repeat yourself, extract common functionality
+- **Meaningful Names**: Clear, descriptive variable and method names
+- **Error Handling**: Comprehensive exception handling with user-friendly messages
+- **Documentation**: Code comments for complex logic, API documentation
+- **Code Reviews**: All changes reviewed before merge
+
+**RULE**: Every agent returns to orchestrator when done
+
+## 🛡️ QUALITY GATES SYSTEM
+**Quality Gate 1 - Code Verification**: Verifier activates after every Coder subtask
+- Validates code against patterns and standards
+- Checks database schema compliance (with user migration approval)
+- Can ACCEPT (continue) or REJECT (return to Orchestrator for re-assignment)
+
+**Quality Gate 2 - Integration Validation**: Integrator activates after complete implementation
+- Executes API contracts using curl commands from audit_trail/contracts.md
+- Validates UI-backend alignment and end-to-end workflows
+- Can ACCEPT (feature complete) or REJECT (return to Orchestrator for fixes)
+
+## 👤 USER APPROVAL CHECKPOINTS
+- **Architect**: After analysis phase, present findings and get approval
+- **Verifier**: Request user to run database migrations before schema validation
+- **Integrator**: Request user approval to start server for integration testing

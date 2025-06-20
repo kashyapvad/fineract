@@ -1,0 +1,53 @@
+---
+description: JPA Audit Field Patterns
+globs: 
+alwaysApply: false
+---
+# JPA Audit Field Patterns
+
+## Pattern: JPA Audit Field Column Naming
+**CRITICAL**: Entities extending `AbstractAuditableWithUTCDateTimeCustom` require specific audit column names to prevent "Unknown column" SQL errors.
+
+### Required JPA Column Names
+**CONSTANTS**: `AuditableFieldsConstants.java` - Defines JPA expected column names
+**JPA EXPECTED**: created_by, created_on_utc, last_modified_by, last_modified_on_utc
+**LEGACY COLUMNS**: createdby_id, created_date, lastmodifiedby_id, lastmodified_date (pre-migration)
+
+### Migration History Context
+**CORE MIGRATION**: `0020_add_audit_entries.xml` - Migrated core tables from legacy to JPA naming
+**CURRENT PATTERN**: All new tables since 0020 use JPA naming standards
+**LEGACY REFERENCE**: `0001_initial_schema.xml` contains old naming for historical context
+
+### Entity Base Class Requirements
+**BASE CLASS**: `AbstractAuditableWithUTCDateTimeCustom.java` uses `AuditableFieldsConstants`
+**COLUMN MAPPING**: `@Column` annotations reference constant field names
+**INHERITANCE**: All auditable entities must extend this base class
+
+### Common Migration Error Pattern
+**ERROR SCENARIO**: Entity extends `AbstractAuditableWithUTCDateTimeCustom` but migration uses legacy columns
+**SQL ERROR**: "Unknown column 't1.created_by' in 'field list'"
+**CAUSE**: Database has `createdby_id` but JPA expects `created_by`
+
+### Correct Migration Pattern
+**NEW TABLES**: Always use JPA naming (created_by, created_on_utc, etc.)
+**DATABASE TYPE**: Use appropriate timestamp types for each database context
+**CONSISTENCY**: Match JPA @Column annotations exactly
+
+### Migration Examples to Study
+**CORRECT PATTERN**: New extension table migrations with proper JPA column names
+**VERIFICATION**: Check entity inheritance vs migration column names
+**ANTI-PATTERN**: Using legacy naming in new migrations
+
+### Validation Commands
+**ENTITY CHECK**: `grep -rn "extends AbstractAuditableWithUTCDateTimeCustom"`
+**MIGRATION CHECK**: `grep -rn "createdby_id\|created_date" parts/90*.xml`
+**CONSTANTS**: Review `AuditableFieldsConstants` for exact field names
+
+### Database Context Considerations
+**MYSQL**: Use `DATETIME(6)` for timestamp precision
+**POSTGRESQL**: Use `TIMESTAMP WITH TIME ZONE` for compatibility
+**NAMING**: Column names are consistent across database types
+
+**ANTI-PATTERN**: Using legacy audit column names with AbstractAuditableWithUTCDateTimeCustom inheritance.
+
+**SOLUTION**: Always use JPA expected column names in new migration files.

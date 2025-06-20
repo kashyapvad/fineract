@@ -33,3 +33,4 @@ gradleExp/
 
 .run/
 .java-version
+audit_trail/*

@@ -1,0 +1,55 @@
+---
+description: Permission Table Mapping Patterns
+globs: 
+alwaysApply: false
+---
+# Permission Table Mapping Patterns
+
+## Pattern: API Resource to Permission Mapping
+**CRITICAL**: Every API endpoint needs corresponding permissions in `m_permission` table. Missing permissions cause 403 errors.
+
+### Permission Entry Examples
+**STUDY EXAMPLES**:
+- `9000_create_extend_kyc_tables.xml:451-489` - CLIENT_KYC permissions standard template
+- `9001_create_extend_credit_report_table.xml:452-490` - CLIENT_CREDIT_REPORT permissions
+**PATTERN**: Create READ/CREATE/UPDATE/DELETE/VERIFY permissions for each entity
+
+### Required Permission Actions
+**STANDARD SET**: READ, CREATE, UPDATE, DELETE for each entity
+**CUSTOM ACTIONS**: PULL (data retrieval), VERIFY (validation operations)
+**ENTITY NAMING**: UPPERCASE with underscores (CLIENT_KYC, CLIENT_CREDIT_REPORT)
+
+### API Permission Validation
+**STUDY EXAMPLES**:
+- `ClientKycApiResource.java:89-92` - Permission validation in API endpoint
+- `ClientKycApiResource.java:118-121` - validateHasReadPermission usage
+**PATTERN**: `@PreAuthorize("hasAuthority('ACTION_ENTITY')")` + context validation
+
+### Command Handler Permission Alignment
+**STUDY**: How `@CommandType(entity="CLIENT_KYC", action="CREATE")` matches permissions
+**REQUIREMENT**: Command handler entity/action must have matching m_permission entry
+**VERIFICATION**: entity_name="CLIENT_KYC", action_name="CREATE" in database
+
+### Permission Code Generation
+**PATTERN**: `[ACTION]_[ENTITY]` format (CREATE_CLIENT_KYC, READ_CLIENT_KYC)
+**GROUPING**: Use "portfolio" for client/loan operations, "administration" for system admin
+**MAKER_CHECKER**: Usually `false` for extension features
+
+### API Resource Integration
+**CHECK**: How API controllers validate permissions before processing
+**CONTEXT**: `this.context.validateHasReadPermission("ENTITY_NAME")` pattern
+**AUTHORIZATION**: Must match database permission codes exactly
+
+### Permission Discovery Commands
+**FIND PERMISSIONS**: `grep -rn "validateHasReadPermission\|validateHasCreatePermission"`
+**ENTITY SEARCH**: `grep -rn "entity_name.*CLIENT_" db/changelog/`
+**VERIFICATION**: Ensure all API resources have matching database permissions
+
+### Common Permission Errors
+**403 FORBIDDEN**: API endpoint exists but permission missing from database
+**MISMATCH**: @PreAuthorize codes don't match m_permission.code values
+**INCOMPLETE SET**: Missing CREATE/UPDATE/DELETE permissions for full CRUD operations
+
+**ANTI-PATTERN**: Creating API endpoints without database permissions, mismatched entity/action names, incomplete permission sets.
+
+**VERIFICATION**: Cross-reference API @PreAuthorize annotations with m_permission table entries.

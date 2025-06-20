@@ -1,0 +1,56 @@
+---
+description: Database Migration Patterns
+globs: 
+alwaysApply: false
+---
+# Database Migration Patterns
+
+## Pattern: Liquibase XML Migration
+**CRITICAL**: All database changes must use Liquibase XML with Apache license headers and proper formatting.
+
+### License Header Requirements
+**STUDY EXAMPLES**:
+- `0001_initial_schema.xml:1-20` - Proper Apache license header format
+- `9000_create_extend_kyc_tables.xml:1-20` - License header after XML declaration
+**BUILD VALIDATION**: `./gradlew rat` task validates license headers
+**TEMPLATE**: `APACHE_LICENSETEXT.md` contains canonical license text
+
+### XML Schema Declaration
+**STUDY**: `0001_initial_schema.xml:21-24` - Correct Liquibase namespace declarations
+**SCHEMA**: Liquibase XSD validation against current version
+**VALIDATION**: `xmllint --schema liquibase-4.3.xsd *.xml`
+
+### Database Context Patterns
+**MYSQL EXAMPLES**: `9000_create_extend_kyc_tables.xml:25-35` - JSON, DATETIME(6) types
+**POSTGRESQL EXAMPLES**: `9000_create_extend_kyc_tables.xml:147-157` - JSONB, TIMESTAMP types
+**CONTEXT USAGE**: `context="mysql"` or `context="postgresql"` for database-specific changes
+
+### Constraint Naming Conventions
+**FOREIGN KEYS**: `0001_initial_schema.xml:2847-2853` - FK_m_loan_m_client naming pattern
+**INDEXES**: `0001_initial_schema.xml:4523-4526` - idx_m_loan_client_id naming pattern
+**PATTERN**: FK_[source_table]_[target_table], idx_[table_name]_[column_name]
+
+### XML Escaping for SQL
+**CHECK CONSTRAINTS**: `9002_create_extend_credit_score_table.xml:254-258` - XML entity escaping
+**OPERATORS**: Use `&gt;` `&lt;` `&amp;` for >, <, & in SQL
+**DATABASE SQL**: `9002_create_extend_credit_score_table.xml:262-266` - dbms-specific SQL
+
+### ChangeSet Requirements  
+**STUDY**: `0001_initial_schema.xml:26-28` - Proper changeset ID and author
+**AUTHOR**: Always use `author="fineract"`
+**IDS**: Sequential changeset IDs within file
+**UNIQUENESS**: No duplicate changeset IDs
+
+### Critical Build Requirements
+**APACHE RAT**: License headers required (fails build without)
+**SPOTLESS**: 4-space indentation, no trailing whitespace
+**LIQUIBASE XSD**: Must validate against current schema version
+
+### PreConditions and Safety
+**EXAMPLES**: Check for table existence before operations
+**ROLLBACK**: Design reversible changes where possible
+**VALIDATION**: Test migrations against sample data
+
+**ANTI-PATTERN**: Generic `addCheckConstraint` (XML parsing errors), missing license headers, wrong formatting.
+
+**VERIFICATION**: `grep -rn "constraintName.*FK_" fineract-provider/src/main/resources/sql/migrations/`

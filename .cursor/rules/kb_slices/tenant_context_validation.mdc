@@ -1,0 +1,54 @@
+---
+description: Tenant Context Validation Patterns
+globs: 
+alwaysApply: false
+---
+# Tenant Context Validation Patterns
+
+## Pattern: ThreadLocalContextUtil Usage
+**CRITICAL**: All business operations must have proper tenant context. Multi-tenant isolation is automatically handled by Fineract framework.
+
+### Production Context Handling
+**KEY PRINCIPLE**: Custom code should NOT manually set tenant context
+**FRAMEWORK**: Fineract automatically manages tenant isolation
+**FOCUS**: Write business logic, not tenant management
+
+### Current Tenant Context Access
+**STUDY**: How services access current tenant information
+**PATTERN**: Use `PlatformSecurityContext` for authenticated user and tenant data
+**REFERENCE**: `ThreadLocalContextUtil.getTenant()` for tenant identifier access
+
+### Test Setup Patterns
+**STUDY EXAMPLES**:
+- `ExternalEventServiceTest.java:105-124` - Proper tenant + business date setup
+- `CustomDateTimeProviderTest.java:39-42` - Context reset in teardown
+- `SpringSecurityPlatformSecurityContextTest.java:44-69` - Security context mocking
+
+### Test Extension Usage (Preferred)
+**REFERENCE**: `WithTenantContextExtension.java:33-45` - Reusable test extension
+**PATTERN**: Use `@ExtendWith(WithTenantContextExtension.class)` for automatic setup
+**BENEFIT**: No manual setup/teardown needed
+
+### Test Context Management
+**SETUP PATTERN**: Set tenant + business dates in @BeforeEach
+**CLEANUP PATTERN**: Always call `ThreadLocalContextUtil.reset()` in @AfterEach
+**ISOLATION**: Each test must have clean tenant context
+
+### Framework Integration Points
+**STUDY**: How HTTP interceptors set tenant context automatically
+**REFERENCE**: HTTP_INTERCEPTORS provider configuration and order
+**UNDERSTANDING**: Tenant context flows from request to database operations
+
+### Error Scenarios to Handle
+**MISSING CONTEXT**: `TenantNotFoundException` when context not set
+**CROSS-TENANT**: Framework prevents cross-tenant data access automatically
+**TEST LEAKS**: Context bleeding between tests if not properly reset
+
+### Database Tenant Isolation
+**AUTOMATIC**: All queries are automatically tenant-scoped
+**VALIDATION**: Repository methods validate tenant context exists
+**ENFORCEMENT**: Database operations fail without proper tenant context
+
+**ANTI-PATTERN**: Manual tenant context manipulation, bypassing isolation, missing test cleanup.
+
+**VERIFICATION**: `grep -rn "ThreadLocalContextUtil" fineract-provider/src/test/java/`

@@ -1,0 +1,48 @@
+---
+description: Command Handler Implementation Patterns
+globs: 
+alwaysApply: false
+---
+# Command Handler Implementation Patterns
+
+## Pattern: @CommandType Handler Implementation
+**CRITICAL**: All state-changing operations must use command handlers with `@CommandType` annotation.
+
+### Required Implementation Pattern
+**STUDY THESE EXAMPLES**:
+- `CreateSmsCommandHandler.java:32-47` - Basic command handler pattern
+- `CreateCodeCommandHandler.java:32-47` - Standard transactional handler  
+- `ApplyAddtionalSharesCommandHandler.java:40-47` - Entity-specific pattern
+- `InlineJobExecuteHandler.java:32-48` - Job execution handler
+
+### Key Requirements from Examples
+- **@Service + @CommandType**: Required annotations with entity/action
+- **@RequiredArgsConstructor**: Constructor injection with final fields
+- **NewCommandSourceHandler**: Must implement this interface
+- **@Transactional**: Required for database operations
+- **Validation First**: Always validate before processing
+- **CommandProcessingResultBuilder**: Use for consistent return format
+
+### Command Registration Discovery
+**CHECK**: `CommandHandlerProvider.java:80-95` - How handlers are discovered and registered
+**PATTERN**: Framework automatically finds @CommandType annotations
+
+### Transaction Management
+**REFERENCE**: `@Transactional` usage patterns in command handlers
+**ISOLATION**: Use appropriate isolation levels for business requirements
+
+### Validation Integration  
+**STUDY**: How command handlers call validators before processing
+**PATTERN**: `validator.validate(command)` then process business logic
+
+### Result Construction
+**CHECK**: `CommandProcessingResultBuilder` usage across different handlers
+**PATTERN**: Include entity ID, command ID, and changes map
+
+### Command Framework Architecture
+**DISCOVERY**: `CommandHandlerProvider.java:64-76` - Handler lookup mechanism
+**INTERFACE**: `NewCommandSourceHandler.java:24-27` - Required interface
+
+**ANTI-PATTERN**: Bypassing command handlers for state changes. All CUD operations must use this pattern.
+
+**VERIFICATION**: `grep -rn "@CommandType" fineract-provider/src/main/java/`

@@ -1,0 +1,200 @@
+# Fineract Knowledge Base Slice Index
+# Maps Fineract-specific rules to agents that need them
+
+version: "1.0"
+description: "Fineract-specific patterns and rules not in general software knowledge"
+
+# Rule categories and their associated agents
+rules:
+  
+  # Multi-tenant architecture patterns
+  tenant_context_validation:
+    file: "tenant_context_validation.mdc"
+    priority: "P0"
+    agents: ["architect", "coder", "tester", "verifier"]
+    description: "ThreadLocalContextUtil usage and tenant isolation patterns"
+    
+  # Command handler patterns  
+  command_handler_implementation:
+    file: "command_handler_implementation.mdc"
+    priority: "P0"
+    agents: ["architect", "coder", "tester"]
+    description: "@CommandType handlers and NewCommandSourceHandler interface"
+    
+  command_handler_registration:
+    file: "command_handler_registration.mdc"
+    priority: "P0"
+    agents: ["architect", "dba", "coder"]
+    description: "Command registration with ExtendCommandWrapperBuilder"
+    
+  # Database patterns
+  database_migration_patterns:
+    file: "database_migration_patterns.mdc"
+    priority: "P0"
+    agents: ["dba", "coder"]
+    description: "Liquibase XML patterns and Apache license compliance"
+    
+  jpa_audit_field_patterns:
+    file: "jpa_audit_field_patterns.mdc"
+    priority: "P0"
+    agents: ["dba", "coder"]
+    description: "JPA audit field naming vs legacy column naming"
+    
+  permission_table_mapping:
+    file: "permission_table_mapping.mdc"
+    priority: "P0"
+    agents: ["dba", "architect", "coder"]
+    description: "API resource to m_permission table mapping"
+    
+  # Repository and service patterns
+  repository_wrapper_patterns:
+    file: "repository_wrapper_patterns.mdc"
+    priority: "P1"
+    agents: ["architect", "coder"]
+    description: "RepositoryWrapper with findOneThrowExceptionIfNotFound"
+    
+  service_layer_patterns:
+    file: "service_layer_patterns.mdc"
+    priority: "P1"
+    agents: ["architect", "coder"]
+    description: "Service interfaces and constructor injection"
+    
+  # Extension and customization patterns
+  extension_module_patterns:
+    file: "extension_module_patterns.mdc"
+    priority: "P1"
+    agents: ["architect", "coder"]
+    description: "org.apache.fineract.extend.* package patterns"
+    
+  optional_bean_configuration:
+    file: "optional_bean_configuration.mdc"
+    priority: "P1"
+    agents: ["architect", "integrator", "coder"]
+    description: "@ConditionalOnProperty patterns for external services"
+    
+  provider_service_patterns:
+    file: "provider_service_patterns.mdc"
+    priority: "P1"
+    agents: ["integrator", "coder"]
+    description: "Centralized external provider service patterns"
+    
+  # Testing patterns
+  tenant_context_test_setup:
+    file: "tenant_context_test_setup.mdc"
+    priority: "P0"
+    agents: ["tester", "coder"]
+    description: "ThreadLocalContextUtil test setup and teardown"
+    
+  validation_exception_testing:
+    file: "validation_exception_testing.mdc"
+    priority: "P0"
+    agents: ["tester", "coder"]
+    description: "PlatformApiDataValidationException testing patterns"
+    
+  # Security patterns
+  security_authorization_patterns:
+    file: "security_authorization_patterns.mdc"
+    priority: "P0"
+    agents: ["architect", "tester", "verifier"]
+    description: "@PreAuthorize annotations and permission validation"
+    
+  # Validation patterns
+  validation_framework_patterns:
+    file: "validation_framework_patterns.mdc"
+    priority: "P1"
+    agents: ["architect", "coder", "tester"]
+    description: "PlatformApiDataValidationException with error codes"
+
+# Agent-specific rule recommendations
+agent_rules:
+  architect:
+    priority_rules:
+      - command_handler_implementation
+      - tenant_context_validation  
+      - permission_table_mapping
+    secondary_rules:
+      - service_layer_patterns
+      - repository_wrapper_patterns
+      - extension_module_patterns
+
+  dba:
+    priority_rules:
+      - database_migration_patterns
+      - jpa_audit_field_patterns
+      - tenant_context_validation
+    secondary_rules:
+      - repository_wrapper_patterns
+      - permission_table_mapping
+      - service_layer_patterns
+
+  integrator:
+    priority_rules:
+      - service_layer_patterns
+      - repository_wrapper_patterns
+      - optional_bean_configuration
+      - server_configuration
+    secondary_rules:
+      - command_handler_implementation
+      - tenant_context_validation
+      - extension_module_patterns
+
+  tester:
+    priority_rules:
+      - api_contract_patterns
+      - permission_table_mapping
+      - api_response_patterns
+      - server_configuration
+    secondary_rules:
+      - error_handling_patterns
+      - authentication_patterns
+
+  coder:
+    priority_rules:
+      - command_handler_implementation
+      - service_layer_patterns
+      - repository_wrapper_patterns
+    secondary_rules:
+      - tenant_context_validation
+      - jpa_audit_field_patterns
+      - optional_bean_configuration
+      - extension_module_patterns
+
+  verifier:
+    priority_rules:
+      - command_handler_implementation
+      - service_layer_patterns
+      - repository_wrapper_patterns
+    secondary_rules:
+      - database_migration_patterns
+      - jpa_audit_field_patterns
+      - permission_table_mapping
+
+# Usage instructions for agents
+usage:
+  instruction: |
+    Each agent should:
+    1. Check their agent_rules section for relevant patterns
+    2. Load priority_rules first (3-5 max)
+    3. Load secondary_rules only if task requires them
+    4. Each rule file is under 500 tokens for quick loading
+    5. Focus on patterns specific to current task requirements 
+
+# Available KB Slices
+available_rules:
+  - command_handler_implementation
+  - tenant_context_validation
+  - database_migration_patterns
+  - permission_table_mapping
+  - jpa_audit_field_patterns
+  - extension_module_patterns
+  - service_layer_patterns
+  - repository_wrapper_patterns
+  - optional_bean_configuration
+  - api_contract_patterns
+  - api_response_patterns
+  - error_handling_patterns
+  - authentication_patterns
+  - server_configuration
+  - testing_framework_patterns
+  - security_testing_patterns
+  - integration_testing_patterns 
