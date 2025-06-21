@@ -106,7 +106,7 @@ public class ExtendProviderService {
             // Don't throw exceptions for validation errors - let the calling service handle them gracefully
             if (!response.isSuccess()) {
                 String responseCode = response.getResponseCode();
-                
+
                 // Only throw exceptions for technical/system errors, not validation errors
                 if (isSystemError(responseCode)) {
                     log.warn("System error during customer data pull for client {}: {}", request.getClientId(), response.getMessage());
@@ -114,65 +114,65 @@ public class ExtendProviderService {
                     throw new RuntimeException(errorMessage);
                 } else {
                     // For validation errors (422, 400, etc.), log and return the response
-                    log.info("Validation error during customer data pull for client {}: {} (Code: {})", 
-                            request.getClientId(), response.getMessage(), responseCode);
+                    log.info("Validation error during customer data pull for client {}: {} (Code: {})", request.getClientId(),
+                            response.getMessage(), responseCode);
                 }
             } else {
                 log.info("Successfully pulled customer data for client: {}", request.getClientId());
             }
-            
+
             return response;
 
         } catch (Exception e) {
             log.error("Error during customer data pull", e);
-            
+
             // Re-throw if it's already a user-friendly RuntimeException
             if (e instanceof RuntimeException && isUserFriendlyMessage(e.getMessage())) {
                 throw e;
             }
-            
+
             // Otherwise, wrap with a generic message
             throw new RuntimeException("Customer data verification failed due to technical error. Please try again later.", e);
         }
     }
-    
+
     /**
      * Create user-friendly error message based on provider response
      */
     private String createUserFriendlyErrorMessage(CustomerDataProviderResponse response) {
         String responseCode = response.getResponseCode();
         String originalMessage = response.getMessage();
-        
+
         // Handle specific error codes
         if ("422".equals(responseCode)) {
             // Use the message from our improved 422 handling
             return originalMessage != null ? originalMessage : "Document validation failed - invalid document format or document not found";
         }
-        
+
         if ("400".equals(responseCode)) {
             return "Invalid request format. Please check the document details and try again.";
         }
-        
+
         if ("401".equals(responseCode)) {
             return "Authentication failed. Please contact system administrator.";
         }
-        
+
         if ("429".equals(responseCode)) {
             return "Service temporarily unavailable due to high demand. Please try again in a few minutes.";
         }
-        
+
         if ("500".equals(responseCode) || "502".equals(responseCode) || "503".equals(responseCode)) {
             return "External verification service is temporarily unavailable. Please try again later.";
         }
-        
+
         // For other errors, use the original message if it looks user-friendly, otherwise generic
         if (originalMessage != null && isUserFriendlyMessage(originalMessage)) {
             return originalMessage;
         }
-        
+
         return "Document verification failed. Please check the document details and try again.";
     }
-    
+
     /**
      * Check if an error message is user-friendly (doesn't contain technical details)
      */
@@ -180,22 +180,19 @@ public class ExtendProviderService {
         if (message == null) {
             return false;
         }
-        
+
         String lowerMessage = message.toLowerCase();
-        
+
         // Messages containing these terms are likely technical and not user-friendly
-        String[] technicalTerms = {
-            "exception", "stack", "null pointer", "http", "api", "json", "xml", 
-            "connection", "timeout", "socket", "ssl", "certificate", "class",
-            "method", "function", "error code", "status code"
-        };
-        
+        String[] technicalTerms = { "exception", "stack", "null pointer", "http", "api", "json", "xml", "connection", "timeout", "socket",
+                "ssl", "certificate", "class", "method", "function", "error code", "status code" };
+
         for (String term : technicalTerms) {
             if (lowerMessage.contains(term)) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -264,18 +261,18 @@ public class ExtendProviderService {
     }
 
     /**
-     * Determine if an error code represents a system/technical error vs validation error
-     * System errors should throw exceptions, validation errors should be handled gracefully
+     * Determine if an error code represents a system/technical error vs validation error System errors should throw
+     * exceptions, validation errors should be handled gracefully
      */
     private boolean isSystemError(String responseCode) {
         if (responseCode == null) {
             return true; // Unknown errors are treated as system errors
         }
-        
+
         // Validation errors - these should be handled gracefully, not thrown as exceptions
-        return !("422".equals(responseCode) ||  // Unprocessable Entity - validation errors
-                "400".equals(responseCode));      // Bad Request - input validation errors
-        
+        return !("422".equals(responseCode) // Unprocessable Entity - validation errors
+                || "400".equals(responseCode)); // Bad Request - input validation errors
+
         // Everything else (401, 403, 429, 500, etc.) is considered a system error
     }
 }

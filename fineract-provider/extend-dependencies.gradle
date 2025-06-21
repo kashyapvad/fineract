@@ -19,10 +19,10 @@
 
 /**
  * Extend Module Dependencies
- * 
+ *
  * This file contains all dependencies specific to the extend module functionality.
  * It is included in the main dependencies.gradle file to maintain fork-safety.
- * 
+ *
  * When updating upstream Fineract, this file can be preserved while the main
  * dependencies.gradle can be safely updated from upstream.
  */
@@ -31,22 +31,22 @@ dependencies {
     // =============================================================================
     // EXTEND MODULE DEPENDENCIES
     // =============================================================================
-    
+
     // docx4j for modern Word document processing with Content Controls
     implementation 'org.docx4j:docx4j-JAXB-ReferenceImpl:11.5.3'
-    
+
     // JAXB implementation for docx4j support
     // Core JAXB dependencies are in main dependencies.gradle
     // docx4j needs additional JAXB runtime implementation for ContextFactory
     implementation 'org.glassfish.jaxb:jaxb-core:4.0.2'
     implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.2'
-    
+
     // =============================================================================
     // OPTIONAL: DOTENV SUPPORT
     // =============================================================================
     // dotenv-java for loading .env files in development environment
     implementation 'io.github.cdimascio:dotenv-java:3.2.0'
-    
+
     // =============================================================================
     // CREDIT BUREAU / KYC DEPENDENCIES
     // =============================================================================
@@ -54,10 +54,10 @@ dependencies {
     // Example:
     // implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     // implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-    
+
     // =============================================================================
     // EXTEND MODULE TESTING DEPENDENCIES
     // =============================================================================
     // Add test-specific dependencies for extend module here
     // testImplementation 'org.testcontainers:testcontainers:1.19.0'
-} 
+}

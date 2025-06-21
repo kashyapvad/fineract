@@ -349,28 +349,35 @@ public class DecentroProvider implements CreditBureauProvider {
             final String normalizedDocumentType = StringUtils.trimToEmpty(documentType).toUpperCase();
 
             switch (normalizedDocumentType) {
-                case "PAN":
+                case "PAN": {
                     verificationResults.put("panVerified", verified);
-                break;
+                    break;
+                }
                 case "AADHAAR":
-                case "AADHAR":
+                case "AADHAR": {
                     verificationResults.put("aadhaarVerified", verified);
-                break;
+                    break;
+                }
                 case "DRIVING_LICENSE":
                 case "DRIVING_LICENCE":
-                case "DL":
+                case "DL": {
                     verificationResults.put("drivingLicenseVerified", verified);
-                break;
+                    break;
+                }
                 case "VOTERID":
                 case "VOTER_ID":
-                case "VOTER ID":
+                case "VOTER ID": {
                     verificationResults.put("voterIdVerified", verified);
-                break;
-                case "PASSPORT":
+                    break;
+                }
+                case "PASSPORT": {
                     verificationResults.put("passportVerified", verified);
-                break;
-                default:
+                    break;
+                }
+                default: {
                     log.warn("Unknown document type for verification: {}", normalizedDocumentType);
+                    break;
+                }
             }
         }
 
@@ -414,7 +421,9 @@ public class DecentroProvider implements CreditBureauProvider {
 
     private String extractReportSummary(JsonNode response) {
         // Same logic as before
-        if (response == null) return null;
+        if (response == null) {
+            return null;
+        }
 
         StringBuilder summary = new StringBuilder();
         if (response.has("responseCode")) {
@@ -429,7 +438,9 @@ public class DecentroProvider implements CreditBureauProvider {
 
     private boolean extractDetailedVerificationResult(JsonNode data, String documentType) {
         // Same logic as before for detailed verification
-        if (data == null) return false;
+        if (data == null) {
+            return false;
+        }
 
         if (data.has("verified")) {
             return data.get("verified").asBoolean();

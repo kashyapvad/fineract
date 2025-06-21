@@ -31,15 +31,14 @@ import org.apache.fineract.extend.kyc.domain.ClientKycDetailsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
+import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.fineract.infrastructure.core.exception.PlatformServiceUnavailableException;
-import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 
 /**
  * Implementation of ClientKycWritePlatformService that handles KYC verification operations.
@@ -68,7 +67,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
         log.info("=== STARTING KYC API VERIFICATION ===");
         log.info("Command ID: {}", command.commandId());
         log.info("Client ID: {}", command.getClientId());
-        
+
         try {
             log.info("Validating provider availability...");
             // Validate provider availability using common service
@@ -103,8 +102,8 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                         log.info("Verifying PAN for client {}", clientId);
 
                         final CustomerDataProviderRequest panRequest = CustomerDataProviderRequest.builder()
-                                .referenceId(this.extendProviderService.createReferenceId("KYC_PAN", clientId)).consent(true).clientId(clientId)
-                                .customerName(client.getDisplayName()).mobileNumber(client.mobileNo())
+                                .referenceId(this.extendProviderService.createReferenceId("KYC_PAN", clientId)).consent(true)
+                                .clientId(clientId).customerName(client.getDisplayName()).mobileNumber(client.mobileNo())
                                 .gender(client.gender() != null ? client.gender().getLabel() : null).documentType("PAN")
                                 .documentNumber(kycDetails.getPanNumber()).build();
 
@@ -195,11 +194,21 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
 
             // Build verification results map
             final Map<String, Boolean> verificationResults = new HashMap<>();
-            if (panVerified != null) verificationResults.put("panVerified", panVerified);
-            if (aadhaarVerified != null) verificationResults.put("aadhaarVerified", aadhaarVerified);
-            if (drivingLicenseVerified != null) verificationResults.put("drivingLicenseVerified", drivingLicenseVerified);
-            if (voterIdVerified != null) verificationResults.put("voterIdVerified", voterIdVerified);
-            if (passportVerified != null) verificationResults.put("passportVerified", passportVerified);
+            if (panVerified != null) {
+                verificationResults.put("panVerified", panVerified);
+            }
+            if (aadhaarVerified != null) {
+                verificationResults.put("aadhaarVerified", aadhaarVerified);
+            }
+            if (drivingLicenseVerified != null) {
+                verificationResults.put("drivingLicenseVerified", drivingLicenseVerified);
+            }
+            if (voterIdVerified != null) {
+                verificationResults.put("voterIdVerified", voterIdVerified);
+            }
+            if (passportVerified != null) {
+                verificationResults.put("passportVerified", passportVerified);
+            }
 
             // Update KYC record with manual verification
             kycDetails.markManualVerificationCompleted(currentUser, verificationResults, verificationNotes);
@@ -310,8 +319,8 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
 
             // Check if KYC details already exist for this client (1-to-1 relationship)
             if (this.kycRepositoryWrapper.existsByClientId(clientId)) {
-                throw new GeneralPlatformDomainRuleException("error.msg.client.kyc.already.exists", 
-                    "KYC details already exist for this client. Please refresh the page to see existing data or use the update operation to modify them.");
+                throw new GeneralPlatformDomainRuleException("error.msg.client.kyc.already.exists",
+                        "KYC details already exist for this client. Please refresh the page to see existing data or use the update operation to modify them.");
             }
 
             // Create new KYC details record using factory method

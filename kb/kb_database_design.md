@@ -54,7 +54,7 @@ FAIL IF:
 VERIFICATION: Check that all API resources have matching permissions in m_permission table and command handler actions have corresponding permissions
 REFERENCES:
   - PATTERN_EXAMPLE: `9000_create_extend_kyc_tables.xml:451-489` (CLIENT_KYC permissions standard template)
-  - PATTERN_EXAMPLE: `9001_create_extend_credit_report_table.xml:452-490` (CLIENT_CREDIT_REPORT permissions)  
+  - PATTERN_EXAMPLE: `9001_create_extend_credit_report_table.xml:452-490` (CLIENT_CREDIT_REPORT permissions)
   - PATTERN_EXAMPLE: `ClientKycApiResource.java:89-92` (permission validation in API endpoint)
   - IMPLEMENTATION: `ClientKycApiResource.java:118-121` (validateHasReadPermission usage)
   - VERIFICATION_CMD: `grep -rn "validateHasReadPermission\|validateHasCreatePermission" fineract-provider/src/main/java/ | grep -o '"[^"]*"' | sort -u`
@@ -97,7 +97,7 @@ FAIL IF:
 - Service implementation method exists but no command handler delegates to it
 - Missing @Service annotation on command handler class
 VERIFICATION: Check that every action in ExtendCommandWrapperBuilder has matching @CommandType(entity="ENTITY_NAME", action="ACTION_NAME")
-REFERENCES: 
+REFERENCES:
   - PATTERN_EXAMPLE: `ExtendCommandWrapperBuilder.java:175-195` (createClientKyc command wrapper)
   - PATTERN_EXAMPLE: `CreateClientKycCommandHandler.java:37` (@CommandType annotation with entity/action)
   - PATTERN_EXAMPLE: `VerifyClientKycApiCommandHandler.java:37` (API verification command handler)
@@ -253,7 +253,7 @@ REFERENCES:
   - PERMISSION_PATTERN: `action_name = "ACTION"` in migration must match handler and wrapper
 COVERAGE_VERIFICATION_CHECKLIST:
   - ✅ API POST/PUT/DELETE endpoints have corresponding command wrappers
-  - ✅ Command wrappers have matching command handler @CommandType annotations  
+  - ✅ Command wrappers have matching command handler @CommandType annotations
   - ✅ Command handlers have corresponding permissions in migration files
   - ✅ API endpoints validate permissions before creating command wrappers
   - ✅ No orphaned permissions without corresponding API functionality
@@ -277,6 +277,6 @@ REFERENCES:
   - ANTI_PATTERN: Separate permission sets for every child entity relationship
 INHERITANCE_PATTERNS:
   - ✅ Credit Report (parent) → Credit Scores (children) use CLIENT_CREDIT_REPORT permissions
-  - ✅ Client (parent) → KYC Details (child) use CLIENT_KYC permissions  
+  - ✅ Client (parent) → KYC Details (child) use CLIENT_KYC permissions
   - ✅ Child operations via parent API: `/clients/{id}/extend/creditreport/reports/{reportId}`
-  - ❌ Separate permissions: CLIENT_CREDIT_SCORE_READ, CLIENT_CREDIT_SCORE_CREATE, etc. 
+  - ❌ Separate permissions: CLIENT_CREDIT_SCORE_READ, CLIENT_CREDIT_SCORE_CREATE, etc.

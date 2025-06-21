@@ -185,8 +185,8 @@ public class ClientKycDetailsRepositoryWrapper {
     }
 
     /**
-     * Bulk retrieval: Gets KYC details for multiple clients in a single optimized query.
-     * Uses the optimized findByClientIds query to avoid N+1 query problems.
+     * Bulk retrieval: Gets KYC details for multiple clients in a single optimized query. Uses the optimized
+     * findByClientIds query to avoid N+1 query problems.
      *
      * @param clientIds
      *            list of client IDs to retrieve KYC details for

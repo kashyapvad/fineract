@@ -92,7 +92,7 @@ public class EIRCalculationServiceImpl implements EIRCalculationService {
         } catch (Exception e) {
             log.error("Error calculating EIR for loan ID: {}", loan.getId(), e);
             throw new PlatformApiDataValidationException("error.msg.loan.eir.calculation.failed",
-                    "EIR calculation failed: " + e.getMessage(), "loanId", loan.getId());
+                    "EIR calculation failed: " + e.getMessage(), "loanId", loan.getId(), e);
         }
     }
 

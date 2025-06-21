@@ -39,9 +39,8 @@ public interface ClientKycReadPlatformService {
     ClientKycData retrieveClientKyc(Long clientId);
 
     /**
-     * Bulk retrieval: Retrieves KYC details for multiple clients in a single optimized operation.
-     * Returns a map with client ID as key and KYC data as value. Clients without KYC data 
-     * will have template data in the response.
+     * Bulk retrieval: Retrieves KYC details for multiple clients in a single optimized operation. Returns a map with
+     * client ID as key and KYC data as value. Clients without KYC data will have template data in the response.
      *
      * @param clientIds
      *            list of client IDs to retrieve KYC details for

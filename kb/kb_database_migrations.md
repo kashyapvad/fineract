@@ -11,7 +11,7 @@ FAIL IF:
 - License header contains formatting errors or truncated text
 - Migration files bypassed in RAT excludes without justification
 VERIFICATION: Run `./gradlew rat` to validate license headers in all XML files
-REFERENCES: 
+REFERENCES:
   - PATTERN_EXAMPLE: `0001_initial_schema.xml:1-20` (proper Apache license header format)
   - PATTERN_EXAMPLE: `9000_create_extend_kyc_tables.xml:1-20` (license header after XML declaration)
   - BUILD_VALIDATION: `build.gradle:rat` task configuration for license validation
@@ -108,7 +108,7 @@ FAIL IF:
 - Operations that cannot be safely rolled back without proper documentation
 - Missing failOnError and onFail attributes in preConditions
 VERIFICATION: Test migration rollback scenarios and preCondition validation
-REFERENCES: 
+REFERENCES:
   - PATTERN_EXAMPLE: `9000_create_extend_kyc_tables.xml:22-35` (changeSet with preConditions)
   - PATTERN_EXAMPLE: `0001_initial_schema.xml:26-45` (failOnError and onFail usage)
   - LIQUIBASE_DOCS: Liquibase preConditions documentation
@@ -158,7 +158,7 @@ FAIL IF:
 - Incorrect package naming or class path references
 - Missing error handling in custom change execution
 VERIFICATION: Verify custom change classes exist and implement required interfaces
-REFERENCES: 
+REFERENCES:
   - PATTERN_EXAMPLE: `0007_x_extend_tenant_ro_passwords.xml:25-30` (customChange class implementation)
   - PATTERN_EXAMPLE: `TenantPasswordEncryptionTask.java` (CustomTaskChange interface implementation)
   - PATTERN_EXAMPLE: `TenantReadOnlyPasswordEncryptionTask.java` (custom change execution example)
@@ -173,7 +173,7 @@ FAIL IF:
 - Inconsistent escaping between MySQL and PostgreSQL contexts
 - SQL syntax errors due to improper XML character handling
 VERIFICATION: Validate XML parsing and SQL syntax in check constraints
-REFERENCES: 
+REFERENCES:
   - PATTERN_EXAMPLE: `9002_create_extend_credit_score_table.xml:254-258` (proper XML entity escaping with &gt; and &lt;)
   - PATTERN_EXAMPLE: `9002_create_extend_credit_score_table.xml:262-266` (database-specific SQL with dbms attribute)
   - XML_DOCS: XML entity escaping documentation
@@ -188,7 +188,7 @@ FAIL IF:
 - Using generic addCheckConstraint without database-specific context
 - Constraint conditions that conflict with existing data integrity
 VERIFICATION: Test migration against database with existing data, validate XML parsing
-REFERENCES: 
+REFERENCES:
   - ANTI_PATTERN: Using addCheckConstraint with unescaped operators (causes XML parsing errors)
   - PATTERN_EXAMPLE: `9002_create_extend_credit_score_table.xml:242-266` (correct preConditions with SQL check)
   - PATTERN_EXAMPLE: `9002_create_extend_credit_score_table.xml:254-266` (proper database-specific SQL implementation)
@@ -398,7 +398,7 @@ REFERENCES:
   - PERMISSION_PATTERN: `action_name = "ACTION"` in migration must match handler and wrapper
 COVERAGE_VERIFICATION_CHECKLIST:
   - ✅ API POST/PUT/DELETE endpoints have corresponding command wrappers
-  - ✅ Command wrappers have matching command handler @CommandType annotations  
+  - ✅ Command wrappers have matching command handler @CommandType annotations
   - ✅ Command handlers have corresponding permissions in migration files
   - ✅ API endpoints validate permissions before creating command wrappers
   - ✅ No orphaned permissions without corresponding API functionality
@@ -422,7 +422,7 @@ REFERENCES:
   - ANTI_PATTERN: Separate permission sets for every child entity relationship
 INHERITANCE_PATTERNS:
   - ✅ Credit Report (parent) → Credit Scores (children) use CLIENT_CREDIT_REPORT permissions
-  - ✅ Client (parent) → KYC Details (child) use CLIENT_KYC permissions  
+  - ✅ Client (parent) → KYC Details (child) use CLIENT_KYC permissions
   - ✅ Child operations via parent API: `/clients/{id}/extend/creditreport/reports/{reportId}`
   - ❌ Separate permissions: CLIENT_CREDIT_SCORE_READ, CLIENT_CREDIT_SCORE_CREATE, etc.
 ### RULE: Tenant Data Migration Patterns

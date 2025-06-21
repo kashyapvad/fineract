@@ -80,7 +80,7 @@ public class KfsRbiCompliantMappingService {
         // Field 3: Disbursal schedule - Use database values instead of hardcoded
         String disbursementType = determineDisbursementType(loan);
         fieldMapping.put("DISBURSEMENT_TYPE", disbursementType);
-        
+
         String stageWiseDetails = determineStageWiseDetails(loan);
         fieldMapping.put("STAGE_WISE_DETAILS", stageWiseDetails);
 
@@ -98,7 +98,7 @@ public class KfsRbiCompliantMappingService {
 
         // Field 6: Interest rate (%) and type (fixed or floating or hybrid) - Use database values
         fieldMapping.put("INTEREST_RATE", formatPercentage(documentData.getInterestRatePerPeriod()));
-        
+
         String interestRateType = determineInterestRateType(loan);
         fieldMapping.put("INTEREST_RATE_TYPE", interestRateType);
 
@@ -227,14 +227,14 @@ public class KfsRbiCompliantMappingService {
      */
     private Map<String, Object> determineContingentCharges(Loan loan) {
         Map<String, Object> charges = new LinkedHashMap<>();
-        
+
         // Find penalty charges from loan product or loan charges
         String penalCharges = "N/A";
         String otherPenalCharges = "N/A";
         String foreclosureCharges = "N/A";
         String switchingCharges = "N/A";
         String anyOtherCharges = "N/A";
-        
+
         // Check loan charges for specific penalty and fee information
         if (loan.getLoanCharges() != null) {
             for (LoanCharge charge : loan.getLoanCharges()) {
@@ -246,13 +246,13 @@ public class KfsRbiCompliantMappingService {
                 }
             }
         }
-        
+
         charges.put("PENAL_CHARGES_DELAYED_PAYMENT", penalCharges);
         charges.put("OTHER_PENAL_CHARGES", otherPenalCharges);
         charges.put("FORECLOSURE_CHARGES", foreclosureCharges);
         charges.put("SWITCHING_CHARGES", switchingCharges);
         charges.put("ANY_OTHER_CHARGES", anyOtherCharges);
-        
+
         return charges;
     }
 
@@ -261,11 +261,11 @@ public class KfsRbiCompliantMappingService {
      */
     private Map<String, Object> extractQualitativeInformation(Loan loan, KfsDocumentData documentData) {
         Map<String, Object> qualitative = new LinkedHashMap<>();
-        
+
         // 1. Recovery agents clause - extract from loan product configuration or company policy
         String recoveryAgentsClause = extractRecoveryAgentsClause(loan);
         qualitative.put("RECOVERY_AGENTS_CLAUSE", recoveryAgentsClause);
-        
+
         // 2. Grievance redressal mechanism - extract from loan product or office configuration
         String grievanceRedressalClause = extractGrievanceRedressalClause(loan);
         qualitative.put("GRIEVANCE_REDRESSAL_CLAUSE", grievanceRedressalClause);
@@ -278,7 +278,7 @@ public class KfsRbiCompliantMappingService {
         // 4. Transfer/securitisation information - check loan product and investor settings
         String transferSecuritisation = extractTransferSecuritisationInfo(loan);
         qualitative.put("TRANSFER_SECURITISATION", transferSecuritisation);
-        
+
         // 5. Collaborative lending details - check for co-lending configuration
         Map<String, String> collaborativeLendingInfo = extractCollaborativeLendingInfo(loan);
         qualitative.put("COLLABORATIVE_LENDING_DETAILS", collaborativeLendingInfo.get("details"));
@@ -292,7 +292,7 @@ public class KfsRbiCompliantMappingService {
         Map<String, String> digitalLoanInfo = extractDigitalLoanInfo(loan);
         qualitative.put("DIGITAL_LOAN_COOLING_OFF_PERIOD", digitalLoanInfo.get("coolingOffPeriod"));
         qualitative.put("DIGITAL_LOAN_LSP_DETAILS", digitalLoanInfo.get("lspDetails"));
-        
+
         return qualitative;
     }
 
@@ -307,8 +307,7 @@ public class KfsRbiCompliantMappingService {
     }
 
     /**
-     * Extracts recovery agents clause from loan product configuration.
-     * Returns N/A if not configured in database.
+     * Extracts recovery agents clause from loan product configuration. Returns N/A if not configured in database.
      */
     private String extractRecoveryAgentsClause(Loan loan) {
         // Check loan product for recovery agents clause configuration
@@ -318,8 +317,8 @@ public class KfsRbiCompliantMappingService {
     }
 
     /**
-     * Extracts grievance redressal mechanism from loan product or office configuration.
-     * Returns N/A if not configured in database.
+     * Extracts grievance redressal mechanism from loan product or office configuration. Returns N/A if not configured
+     * in database.
      */
     private String extractGrievanceRedressalClause(Loan loan) {
         // Check loan product or office for grievance redressal configuration
@@ -329,26 +328,26 @@ public class KfsRbiCompliantMappingService {
     }
 
     /**
-     * Extracts nodal officer details from office/staff configuration.
-     * Returns actual database values or N/A if not available.
+     * Extracts nodal officer details from office/staff configuration. Returns actual database values or N/A if not
+     * available.
      */
     private Map<String, String> extractNodalOfficerDetails(Loan loan, KfsDocumentData documentData) {
         Map<String, String> details = new HashMap<>();
-        
+
         // Try to get actual contact details from database
         String phone = getValueOrDefault(documentData.getCompanyContactNumber(), "");
         String email = getValueOrDefault(documentData.getCompanyEmailAddress(), "");
-        
+
         // Return actual values or N/A if not available in database
         details.put("phone", phone.isEmpty() ? "N/A" : phone);
         details.put("email", email.isEmpty() ? "N/A" : email);
-        
+
         return details;
     }
 
     /**
-     * Extracts transfer/securitisation information from loan configuration.
-     * Returns actual database value or N/A if not configured.
+     * Extracts transfer/securitisation information from loan configuration. Returns actual database value or N/A if not
+     * configured.
      */
     private String extractTransferSecuritisationInfo(Loan loan) {
         // Check loan product for transfer/securitisation configuration
@@ -358,12 +357,12 @@ public class KfsRbiCompliantMappingService {
     }
 
     /**
-     * Extracts collaborative lending information from loan configuration.
-     * Returns actual database values or N/A if not configured.
+     * Extracts collaborative lending information from loan configuration. Returns actual database values or N/A if not
+     * configured.
      */
     private Map<String, String> extractCollaborativeLendingInfo(Loan loan) {
         Map<String, String> info = new HashMap<>();
-        
+
         // Check database for collaborative lending configuration
         // In a real implementation, these would be fields in loan or loan product tables
         // For now, since there are no such fields in the database, return N/A
@@ -373,23 +372,23 @@ public class KfsRbiCompliantMappingService {
         info.put("partnerReName", "N/A");
         info.put("partnerReFunding", "N/A");
         info.put("blendedRate", "N/A");
-        
+
         return info;
     }
 
     /**
-     * Extracts digital loan information from loan configuration.
-     * Returns actual database values or N/A if not configured.
+     * Extracts digital loan information from loan configuration. Returns actual database values or N/A if not
+     * configured.
      */
     private Map<String, String> extractDigitalLoanInfo(Loan loan) {
         Map<String, String> info = new HashMap<>();
-        
+
         // Check database for digital loan configuration
         // In a real implementation, these would be fields in loan product table
         // For now, since there are no such fields in the database, return N/A
         info.put("coolingOffPeriod", "N/A");
         info.put("lspDetails", "N/A");
-        
+
         return info;
     }
 
@@ -578,27 +577,37 @@ public class KfsRbiCompliantMappingService {
     // =====================================================
 
     private String formatCurrency(Number amount) {
-        if (amount == null) return "₹ 0.00";
+        if (amount == null) {
+            return "₹ 0.00";
+        }
         return String.format("₹ %,.2f", amount.doubleValue());
     }
 
     private String formatAmount(Number amount) {
-        if (amount == null) return "0.00";
+        if (amount == null) {
+            return "0.00";
+        }
         return String.format("%,.2f", amount.doubleValue());
     }
 
     private String formatPercentage(Number rate) {
-        if (rate == null) return "0.00%";
+        if (rate == null) {
+            return "0.00%";
+        }
         return String.format("%.2f%%", rate.doubleValue());
     }
 
     private String formatPercentageValue(Number rate) {
-        if (rate == null) return "0.00";
+        if (rate == null) {
+            return "0.00";
+        }
         return String.format("%.2f", rate.doubleValue());
     }
 
     private String formatLoanTerm(Integer termInMonths) {
-        if (termInMonths == null) return "N/A";
+        if (termInMonths == null) {
+            return "N/A";
+        }
 
         if (termInMonths < 12) {
             return termInMonths + " months";

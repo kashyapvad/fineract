@@ -37,7 +37,7 @@ This project consists of **TWO COMPLETELY SEPARATE CODEBASES** that must be hand
 
 ### COMMON CONFUSION POINTS
 ❌ **DON'T**: Look for Angular files in the `/fineract/` directory
-❌ **DON'T**: Look for Java files in the `/fineract-web/` directory  
+❌ **DON'T**: Look for Java files in the `/fineract-web/` directory
 ❌ **DON'T**: Run `npm` commands from the backend directory
 ❌ **DON'T**: Run `gradle` commands from the frontend directory
 ✅ **DO**: Check file extensions to determine which codebase you're working with

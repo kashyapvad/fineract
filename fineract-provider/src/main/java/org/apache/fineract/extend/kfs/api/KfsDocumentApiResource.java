@@ -125,10 +125,10 @@ public class KfsDocumentApiResource {
 
         } catch (JsonProcessingException e) {
             log.error("Error parsing KFS document creation request", e);
-            throw new PlatformApiDataValidationException("Invalid JSON format", "json", apiRequestBodyAsJson);
+            throw new PlatformApiDataValidationException("Invalid JSON format", "json", apiRequestBodyAsJson, e);
         } catch (Exception e) {
             log.error("Error creating KFS document", e);
-            throw e;
+            throw new RuntimeException("Error creating KFS document", e);
         }
     }
 
@@ -232,10 +232,10 @@ public class KfsDocumentApiResource {
 
         } catch (JsonProcessingException e) {
             log.error("Error parsing KFS document update request", e);
-            throw new PlatformApiDataValidationException("Invalid JSON format", "json", apiRequestBodyAsJson);
+            throw new PlatformApiDataValidationException("Invalid JSON format", "json", apiRequestBodyAsJson, e);
         } catch (Exception e) {
             log.error("Error updating KFS document with ID: {}", documentId, e);
-            throw e;
+            throw new RuntimeException("Error updating KFS document with ID: " + documentId, e);
         }
     }
 
@@ -325,7 +325,7 @@ public class KfsDocumentApiResource {
                 documents = kfsDocumentReadPlatformService.retrieveKfsDocumentsByDateRange(startDate, endDate);
             } catch (Exception e) {
                 log.error("Error parsing date parameters", e);
-                throw new PlatformApiDataValidationException("Invalid date format", "date", startDateStr + " - " + endDateStr);
+                throw new PlatformApiDataValidationException("Invalid date format", "date", startDateStr + " - " + endDateStr, e);
             }
         }
         // No filters - return all (this might need pagination in production)
@@ -376,10 +376,10 @@ public class KfsDocumentApiResource {
 
         } catch (JsonProcessingException e) {
             log.error("Error parsing status update request", e);
-            throw new PlatformApiDataValidationException("Invalid JSON format", "json", apiRequestBodyAsJson);
+            throw new PlatformApiDataValidationException("Invalid JSON format", "json", apiRequestBodyAsJson, e);
         } catch (Exception e) {
             log.error("Error updating document status for ID: {}", documentId, e);
-            throw e;
+            throw new RuntimeException("Error updating document status for ID: " + documentId, e);
         }
     }
 

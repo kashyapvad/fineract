@@ -19,20 +19,22 @@
 package org.apache.fineract.extend.creditbureau.domain;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.fineract.extend.converter.PostgresJsonbConverter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
-import org.apache.fineract.portfolio.client.domain.Client;
-import org.apache.fineract.useradministration.domain.AppUser;
 
 /**
  * Entity representing individual credit scores within a credit report.

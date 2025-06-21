@@ -252,7 +252,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
         } catch (Exception e) {
             log.error("Unexpected error creating EIR calculation for loan {}: {}", request.getLoanId(), e.getMessage(), e);
             throw new PlatformDataIntegrityException("error.msg.eir.calculation.create.failed",
-                    "Failed to create EIR calculation for loan " + request.getLoanId() + ": " + e.getMessage(), request.getLoanId());
+                    "Failed to create EIR calculation for loan " + request.getLoanId() + ": " + e.getMessage(), request.getLoanId(), e);
         }
     }
 

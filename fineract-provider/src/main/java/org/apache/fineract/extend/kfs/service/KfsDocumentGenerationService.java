@@ -22,7 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.fineract.extend.kfs.domain.KfsTemplate;
-import org.apache.fineract.extend.kfs.dto.*;
+import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationRequest;
+import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationResponse;
+import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationResult;
+import org.apache.fineract.extend.kfs.dto.KfsGenerationHistoryEntry;
+import org.apache.fineract.extend.kfs.dto.KfsGenerationStatistics;
+import org.apache.fineract.extend.kfs.dto.KfsTemplateFieldsConfig;
+import org.apache.fineract.extend.kfs.dto.KfsTemplateInfo;
+import org.apache.fineract.extend.kfs.dto.RepaymentScheduleData;
 
 /**
  * Service interface for KFS document generation operations. Handles document generation, validation, preview, and

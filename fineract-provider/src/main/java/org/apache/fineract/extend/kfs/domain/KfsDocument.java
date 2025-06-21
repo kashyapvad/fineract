@@ -18,13 +18,20 @@
  */
 package org.apache.fineract.extend.kfs.domain;
 
-import jakarta.persistence.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.Objects;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.fineract.extend.converter.PostgresJsonbConverter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 
@@ -296,8 +303,12 @@ public class KfsDocument extends AbstractAuditableWithUTCDateTimeCustom<Long> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         KfsDocument that = (KfsDocument) o;
         return Objects.equals(id, that.id);
     }
@@ -312,5 +323,15 @@ public class KfsDocument extends AbstractAuditableWithUTCDateTimeCustom<Long> {
         return "KfsDocument{" + "id=" + id + ", loanId=" + loanId + ", clientId=" + clientId + ", documentReferenceNumber='"
                 + documentReferenceNumber + '\'' + ", generationDate=" + generationDate + ", documentStatus='" + documentStatus + '\''
                 + '}';
+    }
+
+    public boolean isChecksumEqual(String otherChecksum) {
+        if (checksum == null && otherChecksum == null) {
+            return true;
+        }
+        if (checksum == null || otherChecksum == null) {
+            return false;
+        }
+        return checksum.equals(otherChecksum);
     }
 }

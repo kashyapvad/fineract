@@ -80,7 +80,7 @@ public class SurePassProvider implements CreditBureauProvider {
 
     @Value("${credit.bureau.surepass.pan-endpoint}")
     private String surePassPanEndpoint;
-    
+
     @PostConstruct
     private void init() {
         log.info("SurePassProvider initialized successfully");
@@ -388,12 +388,9 @@ public class SurePassProvider implements CreditBureauProvider {
     }
 
     /**
-     * Validate names using strict name matching logic
-     * Requirements:
-     * - Direct name comparison (exact match)
-     * - Word-by-word comparison with 100% match requirement (order can be different)
-     * - Case-insensitive comparison with whitespace normalization
-     * - No partial name matching allowed
+     * Validate names using strict name matching logic Requirements: - Direct name comparison (exact match) -
+     * Word-by-word comparison with 100% match requirement (order can be different) - Case-insensitive comparison with
+     * whitespace normalization - No partial name matching allowed
      */
     private boolean validateNames(String clientName, String panName) {
         if (StringUtils.isBlank(clientName) || StringUtils.isBlank(panName)) {
@@ -469,24 +466,24 @@ public class SurePassProvider implements CreditBureauProvider {
             // Handle specific HTTP status codes
             int statusCode = e.getStatusCode().value();
             String responseBody = e.getResponseBodyAsString();
-            
+
             // Handle 422 Unprocessable Entity - Invalid data/validation errors
             if (statusCode == 422) {
                 return handleValidationError(responseBody);
             }
-            
+
             // Handle 401 Unauthorized
             if (statusCode == 401) {
-                throw new ProviderException(getProviderName(), "UNAUTHORIZED", 
-                    "Authentication failed with SurePass API. Please check API credentials.", e, false);
+                throw new ProviderException(getProviderName(), "UNAUTHORIZED",
+                        "Authentication failed with SurePass API. Please check API credentials.", e, false);
             }
-            
+
             // Handle 429 Too Many Requests
             if (statusCode == 429) {
-                throw new ProviderException(getProviderName(), "RATE_LIMITED", 
-                    "Rate limit exceeded for SurePass API. Please try again later.", e, true);
+                throw new ProviderException(getProviderName(), "RATE_LIMITED",
+                        "Rate limit exceeded for SurePass API. Please try again later.", e, true);
             }
-            
+
             // Handle 400 Bad Request
             if (statusCode == 400) {
                 return handleBadRequest(responseBody);
@@ -497,14 +494,14 @@ public class SurePassProvider implements CreditBureauProvider {
                 JsonNode errorResponse = objectMapper.readTree(responseBody);
                 return createErrorResponse(statusCode, errorResponse);
             } catch (Exception parseException) {
-                throw new ProviderException(getProviderName(), "HTTP_ERROR",
-                        "HTTP error: " + e.getStatusCode() + " - " + responseBody, e, isRetryableHttpError(e));
+                throw new ProviderException(getProviderName(), "HTTP_ERROR", "HTTP error: " + e.getStatusCode() + " - " + responseBody,
+                        parseException, isRetryableHttpError(e));
             }
         } catch (ResourceAccessException e) {
             throw new ProviderException(getProviderName(), "NETWORK_ERROR", "Network error: " + e.getMessage(), e, true);
         }
     }
-    
+
     /**
      * Handle 422 validation errors from SurePass API
      */
@@ -513,12 +510,12 @@ public class SurePassProvider implements CreditBureauProvider {
             JsonNode errorResponse = objectMapper.readTree(responseBody);
             String message = errorResponse.path("message").asText("Invalid document data");
             String details = errorResponse.path("details").asText("");
-            
+
             // Create a standardized error response that processPanResponse/processAadhaarResponse can handle
             ObjectNode standardizedError = objectMapper.createObjectNode();
             standardizedError.put("success", false);
             standardizedError.put("status_code", 422);
-            
+
             // Create user-friendly error message
             String userFriendlyMessage;
             if (message.toLowerCase().contains("invalid pan") || message.toLowerCase().contains("pan")) {
@@ -528,16 +525,16 @@ public class SurePassProvider implements CreditBureauProvider {
             } else {
                 userFriendlyMessage = "Invalid document data: " + message;
             }
-            
+
             standardizedError.put("message", userFriendlyMessage);
-            
+
             if (StringUtils.isNotBlank(details)) {
                 standardizedError.put("details", details);
             }
-            
+
             log.warn("SurePass validation error (422): {}", userFriendlyMessage);
             return standardizedError;
-            
+
         } catch (Exception e) {
             // Fallback if we can't parse the error response
             ObjectNode fallbackError = objectMapper.createObjectNode();
@@ -547,7 +544,7 @@ public class SurePassProvider implements CreditBureauProvider {
             return fallbackError;
         }
     }
-    
+
     /**
      * Handle 400 bad request errors from SurePass API
      */
@@ -555,15 +552,15 @@ public class SurePassProvider implements CreditBureauProvider {
         try {
             JsonNode errorResponse = objectMapper.readTree(responseBody);
             String message = errorResponse.path("message").asText("Bad request");
-            
+
             ObjectNode standardizedError = objectMapper.createObjectNode();
             standardizedError.put("success", false);
             standardizedError.put("status_code", 400);
             standardizedError.put("message", "Request format error: " + message);
-            
+
             log.warn("SurePass bad request (400): {}", message);
             return standardizedError;
-            
+
         } catch (Exception e) {
             ObjectNode fallbackError = objectMapper.createObjectNode();
             fallbackError.put("success", false);
@@ -572,7 +569,7 @@ public class SurePassProvider implements CreditBureauProvider {
             return fallbackError;
         }
     }
-    
+
     /**
      * Create standardized error response for other HTTP errors
      */
@@ -580,15 +577,15 @@ public class SurePassProvider implements CreditBureauProvider {
         ObjectNode standardizedError = objectMapper.createObjectNode();
         standardizedError.put("success", false);
         standardizedError.put("status_code", statusCode);
-        
+
         String message = originalError.path("message").asText("API request failed");
         standardizedError.put("message", message);
-        
+
         // Copy any additional error details
         if (originalError.has("details")) {
             standardizedError.set("details", originalError.get("details"));
         }
-        
+
         return standardizedError;
     }
 

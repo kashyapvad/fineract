@@ -128,8 +128,8 @@ public class KfsDataMappingServiceImpl implements KfsDataMappingService {
                 .companyRegistrationNumber(getCompanyRegistrationNumber()).companyLicenseNumber(getCompanyLicenseNumber())
 
                 // Document Information
-                .documentType("Key Facts Statement").generationDate(LocalDate.now()).templateVersion("N/A")
-                .regulatoryCompliance("N/A").build();
+                .documentType("Key Facts Statement").generationDate(LocalDate.now()).templateVersion("N/A").regulatoryCompliance("N/A")
+                .build();
     }
 
     @Override
@@ -142,7 +142,8 @@ public class KfsDataMappingServiceImpl implements KfsDataMappingService {
         try {
             this.loanRepositoryWrapper.findOneWithNotFoundDetection(request.getLoanId());
         } catch (Exception e) {
-            throw new PlatformDataIntegrityException("error.msg.kfs.loan.not.found", "Loan with ID " + request.getLoanId() + " not found");
+            throw new PlatformDataIntegrityException("error.msg.kfs.loan.not.found", "Loan with ID " + request.getLoanId() + " not found",
+                    e);
         }
 
         // Validate loan is in valid state for KFS generation

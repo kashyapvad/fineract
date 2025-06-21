@@ -26,7 +26,14 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.extend.kfs.domain.KfsTemplate;
-import org.apache.fineract.extend.kfs.dto.*;
+import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationRequest;
+import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationResponse;
+import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationResult;
+import org.apache.fineract.extend.kfs.dto.KfsGenerationHistoryEntry;
+import org.apache.fineract.extend.kfs.dto.KfsGenerationStatistics;
+import org.apache.fineract.extend.kfs.dto.KfsTemplateFieldsConfig;
+import org.apache.fineract.extend.kfs.dto.KfsTemplateInfo;
+import org.apache.fineract.extend.kfs.dto.RepaymentScheduleData;
 import org.springframework.stereotype.Service;
 
 /**

@@ -28,9 +28,9 @@ import org.postgresql.util.PGobject;
 
 /**
  * JPA converter specifically for PostgreSQL JSONB columns.
- * 
- * This converter handles PostgreSQL's PGobject type which is returned by the PostgreSQL JDBC driver
- * for JSONB columns. It converts between JsonNode and PGobject.
+ *
+ * This converter handles PostgreSQL's PGobject type which is returned by the PostgreSQL JDBC driver for JSONB columns.
+ * It converts between JsonNode and PGobject.
  */
 @Slf4j
 @Converter(autoApply = false)
@@ -57,7 +57,7 @@ public class PostgresJsonbConverter implements AttributeConverter<JsonNode, Obje
         if (dbData == null) {
             return null;
         }
-        
+
         try {
             String jsonString;
             if (dbData instanceof PGobject pgObject) {
@@ -69,15 +69,15 @@ public class PostgresJsonbConverter implements AttributeConverter<JsonNode, Obje
             } else {
                 throw new IllegalArgumentException("Unsupported database type for JSONB conversion: " + dbData.getClass());
             }
-            
+
             if (jsonString == null || jsonString.trim().isEmpty()) {
                 return null;
             }
-            
+
             return objectMapper.readTree(jsonString);
         } catch (JsonProcessingException e) {
             log.error("Error converting database data to JsonNode from PostgreSQL JSONB: {}", dbData, e);
             throw new IllegalArgumentException("Cannot convert PostgreSQL JSONB to JsonNode", e);
         }
     }
-} 
+}

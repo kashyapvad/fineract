@@ -330,11 +330,21 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
      */
     public int getVerifiedDocumentCount() {
         int count = 0;
-        if (panVerified) count++;
-        if (aadhaarVerified) count++;
-        if (drivingLicenseVerified) count++;
-        if (voterIdVerified) count++;
-        if (passportVerified) count++;
+        if (panVerified) {
+            count++;
+        }
+        if (aadhaarVerified) {
+            count++;
+        }
+        if (drivingLicenseVerified) {
+            count++;
+        }
+        if (voterIdVerified) {
+            count++;
+        }
+        if (passportVerified) {
+            count++;
+        }
         return count;
     }
 

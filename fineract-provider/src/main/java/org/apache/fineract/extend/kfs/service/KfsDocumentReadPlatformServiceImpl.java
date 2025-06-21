@@ -114,11 +114,16 @@ public class KfsDocumentReadPlatformServiceImpl implements KfsDocumentReadPlatfo
             throw new PlatformDataIntegrityException("error.msg.kfs.document.status.required", "Document status is required");
         }
 
-        List<KfsDocument> documents = this.kfsDocumentRepository.findByDocumentStatus(status);
+        try {
+            List<KfsDocument> documents = this.kfsDocumentRepository.findByDocumentStatus(status);
 
-        log.debug("Retrieved {} KFS Documents with status: {}", documents.size(), status);
+            log.debug("Retrieved {} KFS Documents with status: {}", documents.size(), status);
 
-        return documents.stream().map(this::mapEntityToResponse).collect(Collectors.toList());
+            return documents.stream().map(this::mapEntityToResponse).collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error retrieving KFS documents by status: {}", status, e);
+            throw new RuntimeException("Failed to retrieve KFS documents by status: " + status + ": " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -184,8 +189,10 @@ public class KfsDocumentReadPlatformServiceImpl implements KfsDocumentReadPlatfo
 
         } catch (IOException e) {
             log.error("Error reading file for document ID {}: {}", documentId, e.getMessage(), e);
-            throw new PlatformDataIntegrityException("error.msg.kfs.document.file.read.error",
-                    "Error reading document file: " + e.getMessage());
+            throw new RuntimeException("Error reading document file: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Error retrieving KFS document with ID: {}", documentId, e);
+            throw new RuntimeException("Failed to retrieve KFS document with ID: " + documentId + ": " + e.getMessage(), e);
         }
     }
 
@@ -241,7 +248,7 @@ public class KfsDocumentReadPlatformServiceImpl implements KfsDocumentReadPlatfo
         } catch (Exception e) {
             log.error("Error generating KFS document statistics: {}", e.getMessage(), e);
             throw new PlatformDataIntegrityException("error.msg.kfs.document.statistics.error",
-                    "Error generating document statistics: " + e.getMessage());
+                    "Error generating document statistics: " + e.getMessage(), e);
         }
     }
 

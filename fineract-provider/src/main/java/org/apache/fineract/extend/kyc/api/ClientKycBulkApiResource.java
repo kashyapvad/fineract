@@ -50,8 +50,8 @@ import org.springframework.stereotype.Component;
 /**
  * REST API Resource for Bulk Client KYC operations.
  *
- * This resource provides optimized bulk endpoints for retrieving KYC data for multiple clients
- * in a single request, significantly improving performance for table/list views.
+ * This resource provides optimized bulk endpoints for retrieving KYC data for multiple clients in a single request,
+ * significantly improving performance for table/list views.
  */
 @Path("/v1/clients/extend/kyc/bulk")
 @Component
@@ -74,13 +74,12 @@ public class ClientKycBulkApiResource {
             + "verification status, and verification history. For clients without KYC details, "
             + "it returns template data with client information.\n\n"
             + "This bulk endpoint significantly improves performance for table/list views by "
-            + "reducing API calls from N requests to 1 request.\n\n"
-            + "Example Requests:\n\n" 
-            + "GET /v1/clients/extend/kyc/bulk?clientIds=1,2,3,4,5\n\n"
-            + "Response: Map<clientId, ClientKycData>")
+            + "reducing API calls from N requests to 1 request.\n\n" + "Example Requests:\n\n"
+            + "GET /v1/clients/extend/kyc/bulk?clientIds=1,2,3,4,5\n\n" + "Response: Map<clientId, ClientKycData>")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = Map.class))) })
-    public String retrieveClientKycBulk(@QueryParam("clientIds") @Parameter(description = "Comma-separated list of client IDs") final String clientIdsParam,
+    public String retrieveClientKycBulk(
+            @QueryParam("clientIds") @Parameter(description = "Comma-separated list of client IDs") final String clientIdsParam,
             @Context final UriInfo uriInfo) {
 
         // Reuse existing permission validation pattern
@@ -88,7 +87,7 @@ public class ClientKycBulkApiResource {
 
         // Parse client IDs from query parameter (reusing existing logic)
         final List<Long> clientIds = parseClientIds(clientIdsParam);
-        
+
         if (clientIds.isEmpty()) {
             // Return empty JSON object for empty request
             return "{}";
@@ -99,30 +98,30 @@ public class ClientKycBulkApiResource {
 
         // Reuse existing serialization settings
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-        
+
         // Build JSON response manually to maintain Map<clientId, ClientKycData> structure
         // This approach reuses existing serialization for each ClientKycData object
         final StringBuilder jsonResponse = new StringBuilder("{");
         boolean first = true;
-        
+
         for (Map.Entry<Long, ClientKycData> entry : kycDataMap.entrySet()) {
             if (!first) {
                 jsonResponse.append(",");
             }
             first = false;
-            
+
             // Serialize each KYC data object using existing serializer
             jsonResponse.append("\"").append(entry.getKey()).append("\":")
-                       .append(this.toApiJsonSerializer.serialize(settings, entry.getValue()));
+                    .append(this.toApiJsonSerializer.serialize(settings, entry.getValue()));
         }
-        
+
         jsonResponse.append("}");
         return jsonResponse.toString();
     }
 
     /**
-     * Helper method to parse comma-separated client IDs from query parameter.
-     * Reuses the same logic pattern as the individual endpoint for consistency.
+     * Helper method to parse comma-separated client IDs from query parameter. Reuses the same logic pattern as the
+     * individual endpoint for consistency.
      */
     private List<Long> parseClientIds(String clientIdsParam) {
         if (clientIdsParam == null || clientIdsParam.trim().isEmpty()) {
@@ -130,17 +129,10 @@ public class ClientKycBulkApiResource {
         }
 
         try {
-            return Arrays.stream(clientIdsParam.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(Long::valueOf)
-                .toList();
+            return Arrays.stream(clientIdsParam.split(",")).map(String::trim).filter(s -> !s.isEmpty()).map(Long::valueOf).toList();
         } catch (NumberFormatException e) {
-            throw new PlatformApiDataValidationException(
-                "error.msg.invalid.client.ids",
-                "Invalid client IDs format. Expected comma-separated list of numbers.",
-                "clientIds", clientIdsParam
-            );
+            throw new PlatformApiDataValidationException("error.msg.invalid.client.ids",
+                    "Invalid client IDs format. Expected comma-separated list of numbers.", "clientIds", clientIdsParam, e);
         }
     }
-} 
+}

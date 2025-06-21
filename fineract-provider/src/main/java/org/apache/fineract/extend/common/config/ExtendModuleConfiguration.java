@@ -28,7 +28,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Configuration for extend module components.
- * 
+ *
  * This configuration handles the optional nature of credit bureau providers by providing appropriate beans based on
  * whether a CreditBureauProviderFactory is available.
  */
@@ -37,8 +37,7 @@ import org.springframework.context.annotation.Configuration;
 public class ExtendModuleConfiguration {
 
     /**
-     * Provides an empty Optional CreditBureauProviderFactory when the actual credit bureau provider is not
-     * available.
+     * Provides an empty Optional CreditBureauProviderFactory when the actual credit bureau provider is not available.
      */
     @Bean
     @ConditionalOnMissingBean(CreditBureauProviderFactory.class)
@@ -53,7 +52,8 @@ public class ExtendModuleConfiguration {
     @Bean
     @ConditionalOnBean(CreditBureauProviderFactory.class)
     public Optional<CreditBureauProviderFactory> availableCreditBureauProviderFactory(CreditBureauProviderFactory factory) {
-        log.info("DEBUG-CONFIG: Creating Optional<CreditBureauProviderFactory> with actual factory: {}", factory.getClass().getSimpleName());
+        log.info("DEBUG-CONFIG: Creating Optional<CreditBureauProviderFactory> with actual factory: {}",
+                factory.getClass().getSimpleName());
         return Optional.of(factory);
     }
 }

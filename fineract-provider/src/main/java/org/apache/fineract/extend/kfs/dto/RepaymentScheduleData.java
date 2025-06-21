@@ -59,7 +59,9 @@ public class RepaymentScheduleData {
     }
 
     private String formatAmount(BigDecimal amount) {
-        if (amount == null) return "0.00";
+        if (amount == null) {
+            return "0.00";
+        }
         return String.format("%,.2f", amount);
     }
 }

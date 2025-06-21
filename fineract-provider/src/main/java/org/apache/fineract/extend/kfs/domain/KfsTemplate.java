@@ -18,12 +18,20 @@
  */
 package org.apache.fineract.extend.kfs.domain;
 
-import jakarta.persistence.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.Objects;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.fineract.extend.converter.PostgresJsonbConverter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 
@@ -241,8 +249,12 @@ public class KfsTemplate extends AbstractAuditableWithUTCDateTimeCustom<Long> {
     // equals() and hashCode() based on ID
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         KfsTemplate that = (KfsTemplate) o;
         return Objects.equals(id, that.id);
     }

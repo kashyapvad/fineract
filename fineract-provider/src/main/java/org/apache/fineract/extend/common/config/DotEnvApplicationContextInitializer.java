@@ -26,16 +26,15 @@ import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.PropertiesPropertySource;
 
 /**
  * Application context initializer that loads environment variables from .env file.
- * 
- * This initializer is part of the extend module and runs early in the Spring Boot
- * startup process to load environment variables from a .env file before other
- * configurations are processed. This ensures credit bureau provider configuration
- * variables are available when needed.
+ *
+ * This initializer is part of the extend module and runs early in the Spring Boot startup process to load environment
+ * variables from a .env file before other configurations are processed. This ensures credit bureau provider
+ * configuration variables are available when needed.
  */
 @Slf4j
 public class DotEnvApplicationContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -45,17 +44,17 @@ public class DotEnvApplicationContextInitializer implements ApplicationContextIn
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext) {
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
-        
+
         try {
             Path envFile = Paths.get(DOT_ENV_FILE);
-            
+
             if (Files.exists(envFile)) {
                 Properties envProperties = loadEnvFile(envFile);
-                
+
                 if (!envProperties.isEmpty()) {
                     PropertiesPropertySource propertySource = new PropertiesPropertySource("dotenv-extend", envProperties);
                     environment.getPropertySources().addFirst(propertySource);
-                    
+
                     log.info("Successfully loaded {} environment variables from .env file for extend module", envProperties.size());
                 } else {
                     log.debug(".env file is empty");
@@ -63,7 +62,7 @@ public class DotEnvApplicationContextInitializer implements ApplicationContextIn
             } else {
                 log.debug(".env file not found at: {}", envFile.toAbsolutePath());
             }
-            
+
         } catch (Exception e) {
             log.warn("Failed to load .env file for extend module: {}", e.getMessage());
             log.debug("Full error details:", e);
@@ -72,32 +71,31 @@ public class DotEnvApplicationContextInitializer implements ApplicationContextIn
 
     private Properties loadEnvFile(Path envFile) throws IOException {
         Properties properties = new Properties();
-        
+
         Files.lines(envFile).forEach(line -> {
             line = line.trim();
-            
+
             // Skip empty lines and comments
             if (line.isEmpty() || line.startsWith("#")) {
                 return;
             }
-            
+
             // Parse KEY=VALUE format
             int equalIndex = line.indexOf('=');
             if (equalIndex > 0) {
                 String key = line.substring(0, equalIndex).trim();
                 String value = line.substring(equalIndex + 1).trim();
-                
+
                 // Remove quotes if present
-                if ((value.startsWith("\"") && value.endsWith("\"")) || 
-                    (value.startsWith("'") && value.endsWith("'"))) {
+                if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
                     value = value.substring(1, value.length() - 1);
                 }
-                
+
                 properties.setProperty(key, value);
                 log.debug("Loaded environment variable for extend module: {}", key);
             }
         });
-        
+
         return properties;
     }
-} 
+}

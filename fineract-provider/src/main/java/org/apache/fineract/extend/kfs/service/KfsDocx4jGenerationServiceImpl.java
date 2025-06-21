@@ -34,12 +34,27 @@ import org.apache.fineract.extend.kfs.dto.RepaymentScheduleData;
 import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
-import org.docx4j.wml.*;
+import org.docx4j.wml.BooleanDefaultTrue;
 import org.docx4j.wml.CTBorder;
 import org.docx4j.wml.CTShd;
+import org.docx4j.wml.HpsMeasure;
+import org.docx4j.wml.ObjectFactory;
+import org.docx4j.wml.P;
+import org.docx4j.wml.R;
+import org.docx4j.wml.RPr;
 import org.docx4j.wml.STBorder;
 import org.docx4j.wml.STShd;
+import org.docx4j.wml.Tbl;
+import org.docx4j.wml.TblBorders;
+import org.docx4j.wml.TblGrid;
+import org.docx4j.wml.TblGridCol;
+import org.docx4j.wml.TblPr;
+import org.docx4j.wml.TblWidth;
+import org.docx4j.wml.Tc;
+import org.docx4j.wml.TcPr;
 import org.docx4j.wml.TcPrInner.GridSpan;
+import org.docx4j.wml.Text;
+import org.docx4j.wml.Tr;
 import org.springframework.stereotype.Service;
 
 /**
@@ -220,7 +235,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
                 return createFallbackDocument(documentData);
             } catch (Exception fallbackError) {
                 log.error("Fallback document generation also failed: {}", fallbackError.getMessage(), fallbackError);
-                throw new RuntimeException("Both primary and fallback document generation failed", e);
+                throw new RuntimeException("Both primary and fallback document generation failed", fallbackError);
             }
         }
     }
@@ -435,7 +450,8 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         if ("true".equals(getString(fieldMapping, "IS_FLOATING_RATE"))) {
             addFloatingRateDetailsRow(table, factory, fieldMapping);
         } else {
-            addTableRow(table, factory, "7", "Additional Information in case of Floating rate of interest", getString(fieldMapping, "FLOATING_RATE_INFO"), false);
+            addTableRow(table, factory, "7", "Additional Information in case of Floating rate of interest",
+                    getString(fieldMapping, "FLOATING_RATE_INFO"), false);
         }
 
         // Add Fee/Charges row
@@ -492,7 +508,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
 
         table.getContent().add(row);
     }
-    
+
     /**
      * Adds basic cell properties to ensure consistent table structure.
      */
@@ -501,13 +517,13 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         TcPr tcPr = factory.createTcPr();
         cell.setTcPr(tcPr);
     }
-    
+
     /**
      * Creates a safe paragraph with proper text handling.
      */
     private P createSafeParagraph(ObjectFactory factory, String text) {
         P paragraph = factory.createP();
-        
+
         if (text != null && !text.trim().isEmpty()) {
             R run = factory.createR();
             Text textElement = factory.createText();
@@ -517,7 +533,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             run.getContent().add(textElement);
             paragraph.getContent().add(run);
         }
-        
+
         return paragraph;
     }
 
@@ -586,9 +602,9 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         tc3.getContent().add(createParagraph(factory, "(iv) Any other: " + getString(fieldMapping, "OTHER_FEES_RE")));
         tc3.getContent().add(createParagraph(factory, ""));
         tc3.getContent().add(createParagraph(factory, "Payable to a third party through RE (B)"));
+        tc3.getContent().add(createParagraph(factory, "(i) Processing fees: " + getString(fieldMapping, "PROCESSING_FEES_THIRD_PARTY")));
         tc3.getContent()
-                .add(createParagraph(factory, "(i) Processing fees: " + getString(fieldMapping, "PROCESSING_FEES_THIRD_PARTY")));
-        tc3.getContent().add(createParagraph(factory, "(ii) Insurance charges: " + getString(fieldMapping, "INSURANCE_CHARGES_THIRD_PARTY")));
+                .add(createParagraph(factory, "(ii) Insurance charges: " + getString(fieldMapping, "INSURANCE_CHARGES_THIRD_PARTY")));
         tc3.getContent().add(createParagraph(factory, "(iii) Valuation fees: " + getString(fieldMapping, "VALUATION_FEES_THIRD_PARTY")));
         tc3.getContent().add(createParagraph(factory, "(iv) Any other: " + getString(fieldMapping, "OTHER_FEES_THIRD_PARTY")));
         row.getContent().add(tc3);
@@ -664,9 +680,8 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         String phone = getString(fieldMapping, "NODAL_OFFICER_PHONE");
         String email = getString(fieldMapping, "NODAL_OFFICER_EMAIL");
         String phoneEmailValue = formatContactInfo(phone, email);
-        
-        addPart2Row(table, factory, "3", "Phone number and email id of the nodal grievance redressal officer",
-                phoneEmailValue);
+
+        addPart2Row(table, factory, "3", "Phone number and email id of the nodal grievance redressal officer", phoneEmailValue);
 
         addPart2Row(table, factory, "4",
                 "Whether the loan is, or in future maybe, subject to transfer to other REs or securitisation (Yes/ No)",
@@ -783,17 +798,17 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
 
         // Add data row for inner table - Fix N/A duplication issue
         Tr dataRow = factory.createTr();
-        
+
         String originatingReName = getString(fieldMapping, "COLLABORATIVE_LENDING_ORIGINATING_RE_NAME");
         String originatingReFunding = getString(fieldMapping, "COLLABORATIVE_LENDING_ORIGINATING_RE_FUNDING");
         String originatingReCell = formatCellValue(originatingReName, originatingReFunding);
-        
+
         String partnerReName = getString(fieldMapping, "COLLABORATIVE_LENDING_PARTNER_RE_NAME");
         String partnerReFunding = getString(fieldMapping, "COLLABORATIVE_LENDING_PARTNER_RE_FUNDING");
         String partnerReCell = formatCellValue(partnerReName, partnerReFunding);
-        
+
         String blendedRate = getString(fieldMapping, "COLLABORATIVE_LENDING_BLENDED_RATE");
-        
+
         addDataCell(dataRow, factory, originatingReCell);
         addDataCell(dataRow, factory, partnerReCell);
         addDataCell(dataRow, factory, blendedRate);
@@ -842,7 +857,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
      */
     private P createParagraphWithFontSize(ObjectFactory factory, String text, int fontSize) {
         P p = factory.createP();
-        
+
         // Only add content if text is not null or empty
         if (text != null && !text.trim().isEmpty()) {
             R r = factory.createR();
@@ -860,7 +875,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             r.getContent().add(t);
             p.getContent().add(r);
         }
-        
+
         return p;
     }
 
@@ -1046,10 +1061,10 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
     private byte[] convertToByteArrayRobust(WordprocessingMLPackage wordPackage) throws Exception {
         try {
             log.debug("Converting WordprocessingMLPackage to byte array");
-            
+
             // Validate document structure before conversion to prevent Word compatibility issues
             validateDocumentStructure(wordPackage);
-            
+
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             wordPackage.save(outputStream);
             byte[] result = outputStream.toByteArray();
@@ -1120,21 +1135,21 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         if (fieldMapping == null || key == null) {
             return "N/A";
         }
-        
+
         Object value = fieldMapping.get(key);
         if (value == null) {
             return "N/A";
         }
-        
+
         String stringValue = value.toString().trim();
         if (stringValue.isEmpty()) {
             return "N/A";
         }
-        
+
         // Sanitize the string to prevent XML corruption
         return sanitizeXmlText(stringValue);
     }
-    
+
     /**
      * Sanitizes text to prevent XML corruption in Word documents.
      */
@@ -1142,23 +1157,21 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         if (text == null || text.trim().isEmpty()) {
             return "";
         }
-        
+
         // Remove or replace characters that can cause XML corruption
         return text
-            // Replace XML-unsafe characters
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&apos;")
-            // Remove control characters that can cause issues
-            .replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]", "")
-            // Keep ₹ symbol as requested by user
-            .trim();
+                // Replace XML-unsafe characters
+                .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;")
+                // Remove control characters that can cause issues
+                .replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]", "")
+                // Keep ₹ symbol as requested by user
+                .trim();
     }
 
     private String formatAmount(BigDecimal amount) {
-        if (amount == null) return "0.00";
+        if (amount == null) {
+            return "0.00";
+        }
         return String.format("₹ %,.2f", amount);
     }
 
@@ -1167,18 +1180,16 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
      */
     private String formatCellValue(String name, String funding) {
         // Check if name has actual database value (not null, empty, or N/A)
-        boolean hasName = name != null && !name.trim().isEmpty() && 
-                         !"N/A".equalsIgnoreCase(name.trim());
-        
+        boolean hasName = name != null && !name.trim().isEmpty() && !"N/A".equalsIgnoreCase(name.trim());
+
         // Check if funding has actual database value (not null, empty, or N/A)
-        boolean hasFunding = funding != null && !funding.trim().isEmpty() && 
-                            !"N/A".equalsIgnoreCase(funding.trim());
-        
+        boolean hasFunding = funding != null && !funding.trim().isEmpty() && !"N/A".equalsIgnoreCase(funding.trim());
+
         // If neither has actual database value, return single N/A
         if (!hasName && !hasFunding) {
             return "N/A";
         }
-        
+
         // If only one has actual database value, return that value
         if (!hasName) {
             return funding;
@@ -1186,7 +1197,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         if (!hasFunding) {
             return name;
         }
-        
+
         // If both have actual database values, combine them
         return name + " (" + funding + ")";
     }
@@ -1196,18 +1207,16 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
      */
     private String formatContactInfo(String phone, String email) {
         // Check if phone has actual database value (not null, empty, or N/A)
-        boolean hasPhone = phone != null && !phone.trim().isEmpty() && 
-                          !"N/A".equalsIgnoreCase(phone.trim());
-        
+        boolean hasPhone = phone != null && !phone.trim().isEmpty() && !"N/A".equalsIgnoreCase(phone.trim());
+
         // Check if email has actual database value (not null, empty, or N/A)
-        boolean hasEmail = email != null && !email.trim().isEmpty() && 
-                          !"N/A".equalsIgnoreCase(email.trim());
-        
+        boolean hasEmail = email != null && !email.trim().isEmpty() && !"N/A".equalsIgnoreCase(email.trim());
+
         // If neither has actual database value, return single N/A
         if (!hasPhone && !hasEmail) {
             return "N/A";
         }
-        
+
         // If only one has actual database value, return that value
         if (!hasPhone) {
             return email;
@@ -1215,7 +1224,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         if (!hasEmail) {
             return phone;
         }
-        
+
         // If both have actual database values, combine them
         return phone + " / " + email;
     }
@@ -1316,8 +1325,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
                 "Total Interest Amount to be charged during the entire tenor of the loan as per the rate prevailing on sanction date (in Rupees)",
                 getString(fieldMapping, "ANNEX_B_TOTAL_INTEREST_AMOUNT"), false);
 
-        addTableRow(table, factory, "6", "Fee/ Charges payable (in Rupees)", getString(fieldMapping, "ANNEX_B_FEE_CHARGES_PAYABLE"),
-                false);
+        addTableRow(table, factory, "6", "Fee/ Charges payable (in Rupees)", getString(fieldMapping, "ANNEX_B_FEE_CHARGES_PAYABLE"), false);
 
         addTableRow(table, factory, "A", "Payable to the RE (SI No.8A of the KFS template-Part 1)",
                 getString(fieldMapping, "ANNEX_B_PAYABLE_TO_RE"), false);
@@ -1360,7 +1368,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         String safeCol1 = sanitizeXmlText(col1Text != null ? col1Text : "");
         String safeCol2 = sanitizeXmlText(col2Text != null ? col2Text : "");
         String safeCol3 = sanitizeXmlText(col3Text != null ? col3Text : "");
-        
+
         Tr row = factory.createTr();
 
         // Add first column (Sr. No.) with proper cell properties

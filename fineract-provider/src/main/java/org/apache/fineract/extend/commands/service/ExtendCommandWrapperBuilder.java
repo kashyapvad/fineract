@@ -19,18 +19,15 @@
 package org.apache.fineract.extend.commands.service;
 
 import org.apache.fineract.commands.domain.CommandWrapper;
-import org.springframework.stereotype.Component;
 
 /**
- * Custom Command Wrapper Builder for Extended Modules.
- *
- * This builder creates CommandWrapper objects for custom extend functionality without modifying upstream Apache
- * Fineract core files.
- *
- * FORK-SAFE: This approach avoids conflicts with upstream changes.
+ * Utility class for building CommandWrapper instances for extend-specific commands.
  */
-@Component
-public class ExtendCommandWrapperBuilder {
+public final class ExtendCommandWrapperBuilder {
+
+    private ExtendCommandWrapperBuilder() {
+        // Private constructor to prevent instantiation
+    }
 
     /**
      * Creates CommandWrapper for pulling client credit bureau reports.

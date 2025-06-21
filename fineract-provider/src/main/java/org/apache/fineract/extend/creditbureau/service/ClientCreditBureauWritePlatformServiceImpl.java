@@ -414,7 +414,6 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      */
     private void extractAndSaveMultipleCreditScores(ClientCreditReportDetails creditReport, JsonNode reportData) {
         if (reportData == null || !reportData.has("data")) {
-
             return;
         }
 
@@ -469,7 +468,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract customer information from API response.
      */
     private void extractAndUpdateCustomerInformation(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -486,7 +487,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             try {
                 dateOfBirth = LocalDate.parse(data.get("dateOfBirth").asText());
             } catch (Exception e) {
-
+                log.warn("Failed to parse date of birth from report data: {}", data.get("dateOfBirth").asText(), e);
             }
         }
 
@@ -498,7 +499,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract credit summary from API response.
      */
     private void extractAndUpdateCreditSummary(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -514,7 +517,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract financial information from API response.
      */
     private void extractAndUpdateFinancialInformation(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -531,7 +536,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract delinquency information from API response.
      */
     private void extractAndUpdateDelinquencyInformation(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
@@ -546,7 +553,9 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
      * Extract enquiry information from API response.
      */
     private void extractAndUpdateEnquiryInformation(ClientCreditReportDetails creditReport, JsonNode reportData) {
-        if (reportData == null || !reportData.has("data")) return;
+        if (reportData == null || !reportData.has("data")) {
+            return;
+        }
 
         final JsonNode data = reportData.get("data");
 
