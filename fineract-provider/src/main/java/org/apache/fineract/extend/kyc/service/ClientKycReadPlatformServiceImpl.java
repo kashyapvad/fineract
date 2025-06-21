@@ -188,14 +188,11 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
             log.debug("Bulk retrieving KYC data for {} clients", clientIds.size());
 
             // Step 1: Validate all clients exist first (fail fast approach)
-            final Map<Long, Client> clientMap = this.clientRepositoryWrapper.findAll(clientIds)
-                .stream()
-                .collect(Collectors.toMap(Client::getId, client -> client));
+            final Map<Long, Client> clientMap = this.clientRepositoryWrapper.findAll(clientIds).stream()
+                    .collect(Collectors.toMap(Client::getId, client -> client));
 
             // Check for missing clients
-            final List<Long> missingClientIds = clientIds.stream()
-                .filter(id -> !clientMap.containsKey(id))
-                .collect(Collectors.toList());
+            final List<Long> missingClientIds = clientIds.stream().filter(id -> !clientMap.containsKey(id)).collect(Collectors.toList());
 
             if (!missingClientIds.isEmpty()) {
                 log.warn("Some clients not found in bulk request: {}", missingClientIds);
@@ -204,24 +201,23 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
             }
 
             // Step 2: Bulk fetch KYC details for all clients in one query
-            final List<ClientKycDetails> kycDetailsList = this.kycRepositoryWrapper.findByClientIds(
-                clientMap.keySet().stream().collect(Collectors.toList())
-            );
+            final List<ClientKycDetails> kycDetailsList = this.kycRepositoryWrapper
+                    .findByClientIds(clientMap.keySet().stream().collect(Collectors.toList()));
 
             // Step 3: Create map of client ID to KYC details for fast lookup
             final Map<Long, ClientKycDetails> kycDetailsMap = kycDetailsList.stream()
-                .collect(Collectors.toMap(kyc -> kyc.getClient().getId(), kyc -> kyc));
+                    .collect(Collectors.toMap(kyc -> kyc.getClient().getId(), kyc -> kyc));
 
             // Step 4: Build result map - reusing existing mapping logic (DRY principle)
             final Map<Long, ClientKycData> resultMap = new HashMap<>();
-            
+
             for (Map.Entry<Long, Client> entry : clientMap.entrySet()) {
                 final Long clientId = entry.getKey();
                 final Client client = entry.getValue();
-                
+
                 final ClientKycDetails kycDetails = kycDetailsMap.get(clientId);
                 final ClientKycData kycData;
-                
+
                 if (kycDetails != null) {
                     // Use existing mapping method (DRY principle)
                     kycData = mapToClientKycData(kycDetails);
@@ -229,36 +225,34 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
                     // Return template for clients without KYC data
                     kycData = ClientKycData.template(clientId, client.getDisplayName());
                 }
-                
+
                 resultMap.put(clientId, kycData);
             }
 
-            log.debug("Successfully bulk retrieved KYC data for {} clients ({} with KYC data, {} templates)", 
-                clientMap.size(), kycDetailsList.size(), clientMap.size() - kycDetailsList.size());
+            log.debug("Successfully bulk retrieved KYC data for {} clients ({} with KYC data, {} templates)", clientMap.size(),
+                    kycDetailsList.size(), clientMap.size() - kycDetailsList.size());
 
             return resultMap;
 
         } catch (Exception e) {
             log.error("Error in bulk KYC retrieval for {} clients: {}", clientIds.size(), e.getMessage(), e);
-            
-                         // Fallback: return templates for all requested clients if possible
-             try {
-                 final Map<Long, Client> clientMap = this.clientRepositoryWrapper.findAll(clientIds)
-                     .stream()
-                     .collect(Collectors.toMap(Client::getId, client -> client));
+
+            // Fallback: return templates for all requested clients if possible
+            try {
+                final Map<Long, Client> clientMap = this.clientRepositoryWrapper.findAll(clientIds).stream()
+                        .collect(Collectors.toMap(Client::getId, client -> client));
 
                 final Map<Long, ClientKycData> fallbackMap = new HashMap<>();
                 for (Map.Entry<Long, Client> entry : clientMap.entrySet()) {
-                    fallbackMap.put(entry.getKey(), 
-                        ClientKycData.template(entry.getKey(), entry.getValue().getDisplayName()));
+                    fallbackMap.put(entry.getKey(), ClientKycData.template(entry.getKey(), entry.getValue().getDisplayName()));
                 }
-                
+
                 log.warn("Returning templates for {} clients due to bulk retrieval error", fallbackMap.size());
                 return fallbackMap;
-                
+
             } catch (Exception fallbackException) {
                 log.error("Fallback failed for bulk retrieval: {}", fallbackException.getMessage());
-                throw e;
+                throw new RuntimeException("Failed to retrieve bulk KYC data and fallback failed", fallbackException);
             }
         }
     }
