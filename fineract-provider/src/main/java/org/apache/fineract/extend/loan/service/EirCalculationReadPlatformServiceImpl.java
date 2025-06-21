@@ -136,7 +136,7 @@ public class EirCalculationReadPlatformServiceImpl implements EirCalculationRead
      * Convert EirCalculation entity to EirCalculationResponse DTO.
      */
     private EirCalculationResponse convertToResponse(EirCalculation calculation) {
-        return EirCalculationResponse.builder().calculationId((Long) calculation.getId()).loanId(calculation.getLoanId())
+        return EirCalculationResponse.builder().calculationId(calculation.getId()).loanId(calculation.getLoanId())
                 .calculationDate(calculation.getCalculationDate()).effectiveInterestRate(calculation.getEffectiveInterestRate())
                 .principalAmount(calculation.getPrincipalAmount()).netDisbursementAmount(calculation.getNetDisbursementAmount())
                 .chargesDueAtDisbursement(calculation.getChargesDueAtDisbursement()).emiAmount(calculation.getEmiAmount())

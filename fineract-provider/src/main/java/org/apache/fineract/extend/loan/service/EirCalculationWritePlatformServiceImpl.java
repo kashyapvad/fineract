@@ -242,7 +242,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
                     calculationResult.getEffectiveInterestRate());
 
             return new CommandProcessingResultBuilder().withCommandId(null)
-                    .withEntityId(savedCalculation.getId() != null ? (Long) savedCalculation.getId() : 0L)
+                    .withEntityId(savedCalculation.getId() != null ? savedCalculation.getId() : 0L)
                     .withResourceIdAsString(savedCalculation.getId() != null ? savedCalculation.getId().toString() : "0").build();
 
         } catch (PlatformDataIntegrityException e) {
@@ -317,7 +317,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
 
             log.info("EIR calculation updated: {}", calculationId);
 
-            return new CommandProcessingResultBuilder().withCommandId(null).withEntityId((Long) updatedCalculation.getId())
+            return new CommandProcessingResultBuilder().withCommandId(null).withEntityId(updatedCalculation.getId())
                     .withResourceIdAsString(updatedCalculation.getId().toString()).build();
 
         } catch (Exception e) {
