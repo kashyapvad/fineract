@@ -34,6 +34,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+// QueryParam import removed since bulk endpoint moved to separate resource
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
@@ -46,10 +47,15 @@ import org.apache.fineract.extend.kyc.data.ManualUnverifyKycRequest;
 import org.apache.fineract.extend.kyc.service.ClientKycReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSerializationSettings;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+// ArrayList, Arrays, List, and Collectors imports removed since bulk endpoint moved to separate resource
 
 /**
  * REST API Resource for Client KYC verification operations.
@@ -95,6 +101,9 @@ public class ClientKycApiResource {
 
         return this.toApiJsonSerializer.serialize(settings, kycData);
     }
+
+    // Bulk endpoint moved to ClientKycBulkApiResource for proper path structure
+    // This avoids path conflicts and follows REST conventions
 
     @GET
     @Path("template")
@@ -260,4 +269,6 @@ public class ClientKycApiResource {
 
         return this.commandResultToApiJsonSerializer.serialize(result);
     }
+
+    // parseClientIds method moved to ClientKycBulkApiResource to avoid duplication
 }

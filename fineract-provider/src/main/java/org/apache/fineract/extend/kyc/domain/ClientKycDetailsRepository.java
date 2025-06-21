@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.extend.kyc.domain;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -41,7 +42,15 @@ public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetai
      */
     Optional<ClientKycDetails> findByClient_Id(Long clientId);
 
-    // Removed findLatestKycWithDataByClientId - no longer needed with 1-to-1 relationship
+    /**
+     * Bulk retrieval: Finds KYC details for multiple clients in a single optimized query.
+     * Uses JOIN FETCH to avoid N+1 queries and optimize performance.
+     *
+     * @param clientIds list of client IDs to retrieve KYC details for
+     * @return list of KYC details for the specified clients
+     */
+    @Query("SELECT k FROM ClientKycDetails k JOIN FETCH k.client c WHERE c.id IN :clientIds")
+    List<ClientKycDetails> findByClientIds(@Param("clientIds") List<Long> clientIds);
 
     /**
      * Counts KYC details for a specific client.
@@ -52,8 +61,6 @@ public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetai
      */
     @Query("SELECT COUNT(k) FROM ClientKycDetails k WHERE k.client.id = :clientId")
     long countByClientId(@Param("clientId") Long clientId);
-
-    // Removed duplicate-handling methods - no longer needed with 1-to-1 relationship and unique constraint
 
     /**
      * Finds KYC details by PAN number.
@@ -78,7 +85,7 @@ public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetai
      * @return list of KYC details with the specified verification method
      */
     @Query("SELECT k FROM ClientKycDetails k WHERE k.verificationMethod = :verificationMethod")
-    java.util.List<ClientKycDetails> findByVerificationMethod(@Param("verificationMethod") KycVerificationMethod verificationMethod);
+    List<ClientKycDetails> findByVerificationMethod(@Param("verificationMethod") KycVerificationMethod verificationMethod);
 
     /**
      * Finds all KYC details verified by a specific provider.
@@ -87,7 +94,7 @@ public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetai
      * @return list of KYC details verified by the provider
      */
     @Query("SELECT k FROM ClientKycDetails k WHERE k.verificationProvider = :verificationProvider")
-    java.util.List<ClientKycDetails> findByVerificationProvider(@Param("verificationProvider") String verificationProvider);
+    List<ClientKycDetails> findByVerificationProvider(@Param("verificationProvider") String verificationProvider);
 
     /**
      * Finds all clients with at least one verified KYC document.
@@ -95,7 +102,7 @@ public interface ClientKycDetailsRepository extends JpaRepository<ClientKycDetai
      * @return list of KYC details where at least one document is verified
      */
     @Query("SELECT k FROM ClientKycDetails k WHERE k.panVerified = true OR k.aadhaarVerified = true OR k.drivingLicenseVerified = true OR k.voterIdVerified = true OR k.passportVerified = true")
-    java.util.List<ClientKycDetails> findAllWithVerifiedDocuments();
+    List<ClientKycDetails> findAllWithVerifiedDocuments();
 
     /**
      * Counts clients with complete KYC verification (all provided documents verified).

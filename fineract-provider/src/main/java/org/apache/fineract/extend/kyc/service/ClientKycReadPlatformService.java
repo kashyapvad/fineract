@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.extend.kyc.service;
 
+import java.util.List;
+import java.util.Map;
 import org.apache.fineract.extend.kyc.data.ClientKycData;
 
 /**
@@ -35,6 +37,17 @@ public interface ClientKycReadPlatformService {
      * @return client KYC data
      */
     ClientKycData retrieveClientKyc(Long clientId);
+
+    /**
+     * Bulk retrieval: Retrieves KYC details for multiple clients in a single optimized operation.
+     * Returns a map with client ID as key and KYC data as value. Clients without KYC data 
+     * will have template data in the response.
+     *
+     * @param clientIds
+     *            list of client IDs to retrieve KYC details for
+     * @return map of client ID to KYC data
+     */
+    Map<Long, ClientKycData> retrieveClientKycBulk(List<Long> clientIds);
 
     /**
      * Retrieves template data for KYC operations.

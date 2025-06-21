@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.extend.kyc.domain;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.extend.kyc.exception.ClientKycNotFoundException;
@@ -180,6 +182,21 @@ public class ClientKycDetailsRepositoryWrapper {
      */
     public Optional<ClientKycDetails> getByClientId(final Long clientId) {
         return this.clientKycDetailsRepository.findByClient_Id(clientId);
+    }
+
+    /**
+     * Bulk retrieval: Gets KYC details for multiple clients in a single optimized query.
+     * Uses the optimized findByClientIds query to avoid N+1 query problems.
+     *
+     * @param clientIds
+     *            list of client IDs to retrieve KYC details for
+     * @return list of KYC details for the specified clients
+     */
+    public List<ClientKycDetails> findByClientIds(final List<Long> clientIds) {
+        if (clientIds == null || clientIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return this.clientKycDetailsRepository.findByClientIds(clientIds);
     }
 
     // Removed findLatestKycWithDataByClientId - no longer needed with 1-to-1 relationship
