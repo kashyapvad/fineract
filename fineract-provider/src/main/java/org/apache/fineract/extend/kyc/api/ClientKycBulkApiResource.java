@@ -87,7 +87,6 @@ public class ClientKycBulkApiResource {
 
         // Parse client IDs from query parameter (reusing existing logic)
         final List<Long> clientIds = parseClientIds(clientIdsParam);
-
         if (clientIds.isEmpty()) {
             // Return empty JSON object for empty request
             return "{}";
@@ -98,12 +97,10 @@ public class ClientKycBulkApiResource {
 
         // Reuse existing serialization settings
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
-
         // Build JSON response manually to maintain Map<clientId, ClientKycData> structure
         // This approach reuses existing serialization for each ClientKycData object
         final StringBuilder jsonResponse = new StringBuilder("{");
         boolean first = true;
-
         for (Map.Entry<Long, ClientKycData> entry : kycDataMap.entrySet()) {
             if (!first) {
                 jsonResponse.append(",");
