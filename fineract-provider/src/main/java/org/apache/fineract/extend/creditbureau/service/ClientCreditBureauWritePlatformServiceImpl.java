@@ -163,7 +163,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 savedDetails.markAsFailed("API_ERROR", apiException.getMessage());
                 this.creditReportRepositoryWrapper.save(savedDetails);
 
-                log.error("Failed to pull credit report for client {}: {}", clientId, apiException.getMessage());
+                log.error("Failed to pull credit report for client {}", clientId, apiException);
                 throw new RuntimeException("Failed to pull credit report: " + apiException.getMessage(), apiException);
             }
 
@@ -172,7 +172,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     .withClientId(clientId).build();
 
         } catch (Exception e) {
-            log.error("Error processing credit report pull command: {}", e.getMessage(), e);
+            log.error("Error processing credit report pull command: {}", e);
             throw e;
         }
     }
@@ -224,7 +224,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     .build();
 
         } catch (Exception e) {
-            log.error("Error processing credit report deletion command: {}", e.getMessage(), e);
+            log.error("Error processing credit report deletion command: {}", e);
             throw e;
         }
     }
@@ -296,18 +296,18 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     .withClientId(clientId).build();
 
         } catch (final DataIntegrityViolationException dve) {
-            log.error("Data integrity violation in createCreditReport: {}", dve.getMessage(), dve);
+            log.error("Data integrity violation in createCreditReport: {}", dve);
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException dve) {
-            log.error("JPA exception in createCreditReport: {}", dve.getMessage(), dve);
+            log.error("JPA exception in createCreditReport: {}", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         } catch (final PersistenceException dve) {
-            log.error("Persistence exception in createCreditReport: {}", dve.getMessage(), dve);
+            log.error("Persistence exception in createCreditReport: {}", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         } catch (Exception e) {
-            log.error("Error processing manual credit report creation: {}", e.getMessage(), e);
+            log.error("Error processing manual credit report creation: {}", e);
             throw e;
         }
     }
@@ -393,18 +393,18 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     .build();
 
         } catch (final DataIntegrityViolationException dve) {
-            log.error("Data integrity violation in updateCreditReport: {}", dve.getMessage(), dve);
+            log.error("Data integrity violation in updateCreditReport: {}", dve);
             throw handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
         } catch (final JpaSystemException dve) {
-            log.error("JPA exception in updateCreditReport: {}", dve.getMessage(), dve);
+            log.error("JPA exception in updateCreditReport: {}", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         } catch (final PersistenceException dve) {
-            log.error("Persistence exception in updateCreditReport: {}", dve.getMessage(), dve);
+            log.error("Persistence exception in updateCreditReport: {}", dve);
             Throwable throwable = ExceptionUtils.getRootCause(dve.getCause());
             throw handleDataIntegrityIssues(command, throwable, dve);
         } catch (Exception e) {
-            log.error("Error processing credit report update: {}", e.getMessage(), e);
+            log.error("Error processing credit report update: {}", e);
             throw e;
         }
     }
@@ -777,11 +777,11 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
 
             // REMOVE scores that are no longer in the request
             List<ClientCreditScoreDetails> scoresToRemove = new ArrayList<>();
-            for (String existingModel : existingScoresByModel.keySet()) {
-                if (!requestedScoreModels.contains(existingModel)) {
-                    ClientCreditScoreDetails scoreToRemove = existingScoresByModel.get(existingModel);
+            for (Map.Entry<String, ClientCreditScoreDetails> entry : existingScoresByModel.entrySet()) {
+                if (!requestedScoreModels.contains(entry.getKey())) {
+                    ClientCreditScoreDetails scoreToRemove = entry.getValue();
                     scoresToRemove.add(scoreToRemove);
-                    log.info("MARKING for removal: score model={} (no longer in request)", existingModel);
+                    log.info("MARKING for removal: score model={} (no longer in request)", entry.getKey());
                 }
             }
 
@@ -866,7 +866,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                     creditReport.setAdditionalDataFromJson(null);
                 }
             } catch (Exception e) {
-                log.error("Failed to process additional data for credit report {}: {}", creditReport.getId(), e.getMessage(), e);
+                log.error("Failed to process additional data for credit report {}", creditReport.getId(), e);
                 // Don't fail the entire update if additional data parsing fails
             }
         }

@@ -483,7 +483,7 @@ public class KfsRbiCompliantMappingService {
                 return newCalculation.getEffectiveInterestRate();
             }
         } catch (Exception e) {
-            log.error("Failed to create EIR calculation for loan {}: {}", loanId, e.getMessage());
+            log.error("Failed to create EIR calculation for loan {}", loanId, e);
         }
 
         // Fallback: return nominal interest rate if EIR calculation fails

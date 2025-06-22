@@ -220,7 +220,7 @@ public class ExtendProviderService {
             return response;
 
         } catch (Exception e) {
-            log.error("Error during credit report generation for client {}: {}", request.getClientId(), e.getMessage(), e);
+            log.error("Error during credit report generation for client {}", request.getClientId(), e);
             throw new RuntimeException("Credit report generation failed: " + e.getMessage(), e);
         }
     }

@@ -66,7 +66,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
             return creditReports.stream().map(this::mapToClientCreditBureauData).collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Error retrieving credit reports for client {}: {}", clientId, e.getMessage(), e);
+            log.error("Error retrieving credit reports for client {}", clientId, e);
             throw e;
         }
     }
@@ -93,7 +93,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
             return mapToClientCreditBureauData(creditReport);
 
         } catch (Exception e) {
-            log.error("Error retrieving credit report {} for client {}: {}", reportId, clientId, e.getMessage(), e);
+            log.error("Error retrieving credit report {} for client {}", reportId, clientId, e);
             throw e;
         }
     }
@@ -121,7 +121,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
             return creditReports.stream().map(this::mapToClientCreditBureauData).collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Error retrieving credit reports by type {} for client {}: {}", reportTypeCode, clientId, e.getMessage(), e);
+            log.error("Error retrieving credit reports by type {} for client {}", reportTypeCode, clientId, e);
             throw e;
         }
     }
@@ -146,7 +146,7 @@ public class ClientCreditBureauReadPlatformServiceImpl implements ClientCreditBu
             return creditReports.stream().map(this::mapToClientCreditBureauData).collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Error retrieving credit reports by provider {} for client {}: {}", provider, clientId, e.getMessage(), e);
+            log.error("Error retrieving credit reports by provider {} for client {}", provider, clientId, e);
             throw e;
         }
     }

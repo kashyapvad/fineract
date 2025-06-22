@@ -58,7 +58,7 @@ public class EirCalculationReadPlatformServiceImpl implements EirCalculationRead
             return convertToResponse(calculation);
 
         } catch (Exception e) {
-            log.error("Error retrieving EIR calculation {}: {}", calculationId, e.getMessage(), e);
+            log.error("Error retrieving EIR calculation {}", calculationId, e);
             throw e;
         }
     }
@@ -79,7 +79,7 @@ public class EirCalculationReadPlatformServiceImpl implements EirCalculationRead
             return responses;
 
         } catch (Exception e) {
-            log.error("Error retrieving EIR calculations for loan {}: {}", loanId, e.getMessage(), e);
+            log.error("Error retrieving EIR calculations for loan {}", loanId, e);
             throw e;
         }
     }
@@ -106,7 +106,7 @@ public class EirCalculationReadPlatformServiceImpl implements EirCalculationRead
             return response;
 
         } catch (Exception e) {
-            log.error("Error retrieving latest EIR calculation for loan {}: {}", loanId, e.getMessage(), e);
+            log.error("Error retrieving latest EIR calculation for loan {}", loanId, e);
             throw e;
         }
     }
@@ -127,7 +127,7 @@ public class EirCalculationReadPlatformServiceImpl implements EirCalculationRead
             return responses;
 
         } catch (Exception e) {
-            log.error("Error retrieving EIR calculation history for loan {}: {}", loanId, e.getMessage(), e);
+            log.error("Error retrieving EIR calculation history for loan {}", loanId, e);
             throw e;
         }
     }

@@ -70,7 +70,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
             return createEirCalculation(request);
 
         } catch (Exception e) {
-            log.error("Error creating EIR calculation via command: {}", e.getMessage(), e);
+            log.error("Error creating EIR calculation via command: {}", e);
             throw e;
         }
     }
@@ -92,7 +92,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
             return updateEirCalculation(calculationId, request);
 
         } catch (Exception e) {
-            log.error("Error updating EIR calculation via command: {}", e.getMessage(), e);
+            log.error("Error updating EIR calculation via command: {}", e);
             throw e;
         }
     }
@@ -111,7 +111,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
             return deleteEirCalculation(calculationId);
 
         } catch (Exception e) {
-            log.error("Error deleting EIR calculation via command: {}", e.getMessage(), e);
+            log.error("Error deleting EIR calculation via command: {}", e);
             throw e;
         }
     }
@@ -249,10 +249,10 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
 
         } catch (PlatformDataIntegrityException e) {
             // Re-throw platform exceptions as-is
-            log.error("Platform error creating EIR calculation for loan {}: {}", request.getLoanId(), e.getMessage());
+            log.error("Platform error creating EIR calculation for loan {}", request.getLoanId(), e);
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error creating EIR calculation for loan {}: {}", request.getLoanId(), e.getMessage(), e);
+            log.error("Unexpected error creating EIR calculation for loan {}", request.getLoanId(), e);
             throw new PlatformDataIntegrityException("error.msg.eir.calculation.create.failed",
                     "Failed to create EIR calculation for loan " + request.getLoanId() + ": " + e.getMessage(), request.getLoanId(), e);
         }
@@ -280,7 +280,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
             }
 
         } catch (Exception e) {
-            log.error("Error calculating EIR for loan {}: {}", loanId, e.getMessage(), e);
+            log.error("Error calculating EIR for loan {}", loanId, e);
             throw e;
         }
     }
@@ -323,7 +323,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
                     .withResourceIdAsString(updatedCalculation.getId().toString()).build();
 
         } catch (Exception e) {
-            log.error("Error updating EIR calculation {}: {}", calculationId, e.getMessage(), e);
+            log.error("Error updating EIR calculation {}", calculationId, e);
             throw e;
         }
     }
@@ -348,7 +348,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
                     .withResourceIdAsString(calculationId.toString()).build();
 
         } catch (Exception e) {
-            log.error("Error deleting EIR calculation {}: {}", calculationId, e.getMessage(), e);
+            log.error("Error deleting EIR calculation {}", calculationId, e);
             throw e;
         }
     }

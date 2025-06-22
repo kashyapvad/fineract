@@ -19,6 +19,7 @@
 package org.apache.fineract.extend.kfs.service;
 
 import com.google.common.base.Splitter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.xml.bind.JAXBContext;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
@@ -124,6 +125,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(value = { "MS_SHOULD_BE_FINAL", "MS_PKGPROTECT" }, justification = "DateTimeFormatters are immutable and thread-safe")
 public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -151,7 +153,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
 
             log.info("docx4j JAXB contexts initialized successfully");
         } catch (Exception e) {
-            log.error("Failed to initialize docx4j JAXB contexts: {}", e.getMessage(), e);
+            log.error("Failed to initialize docx4j JAXB contexts: {}", e);
             // Don't throw here - let the service try to work with what's available
         }
     }
@@ -232,14 +234,14 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             return result;
 
         } catch (Exception e) {
-            log.error("Error in generateRbiCompliantDocx: {}", e.getMessage(), e);
+            log.error("Error in generateRbiCompliantDocx: {}", e);
 
             // Try a fallback approach with minimal document
             try {
                 log.info("Attempting fallback document generation...");
                 return createFallbackDocument(documentData);
             } catch (Exception fallbackError) {
-                log.error("Fallback document generation also failed: {}", fallbackError.getMessage(), fallbackError);
+                log.error("Fallback document generation also failed: {}", fallbackError);
                 throw new RuntimeException("Both primary and fallback document generation failed", fallbackError);
             }
         }
@@ -267,7 +269,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             content.append("No. | Due Date   | Principal | Interest | EMI Amount\n");
             content.append("----+------------+-----------+----------+-----------\n");
             for (RepaymentScheduleData schedule : documentData.getRepaymentSchedule()) {
-                content.append(String.format("%-3d | %-10s | %-9s | %-8s | %-9s\n", schedule.getInstallmentNumber(),
+                content.append(String.format("%-3d | %-10s | %-9s | %-8s | %-9s%n", schedule.getInstallmentNumber(),
                         schedule.getDueDate() != null ? schedule.getDueDate().format(DATE_FORMATTER) : "TBD",
                         formatAmount(schedule.getPrincipalAmount()), formatAmount(schedule.getInterestAmount()),
                         formatAmount(schedule.getTotalAmount())));
@@ -306,7 +308,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             return wordPackage;
 
         } catch (Exception e) {
-            log.error("Failed to create WordprocessingMLPackage: {}", e.getMessage(), e);
+            log.error("Failed to create WordprocessingMLPackage: {}", e);
             throw new RuntimeException("Failed to initialize Word document package", e);
         }
     }
@@ -340,7 +342,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             log.debug("All required JAXB contexts are properly initialized");
 
         } catch (Exception e) {
-            log.error("Failed to initialize JAXB contexts: {}", e.getMessage(), e);
+            log.error("Failed to initialize JAXB contexts: {}", e);
             throw new RuntimeException("Critical JAXB context initialization failed", e);
         }
     }
@@ -1077,7 +1079,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             return result;
 
         } catch (Exception e) {
-            log.error("Failed to convert WordprocessingMLPackage to byte array: {}", e.getMessage(), e);
+            log.error("Failed to convert WordprocessingMLPackage to byte array: {}", e);
 
             // More detailed error analysis
             if (e.getMessage() != null) {

@@ -228,7 +228,7 @@ public class KfsDocumentGenerationApiResource {
             return Response.status(Response.Status.CREATED).entity(templateInfo).build();
 
         } catch (Exception e) {
-            log.error("Error uploading KFS template: {}", e.getMessage(), e);
+            log.error("Error uploading KFS template: {}", e);
             return Response.status(Response.Status.BAD_REQUEST).entity("Template upload failed: " + e.getMessage()).build();
         }
     }

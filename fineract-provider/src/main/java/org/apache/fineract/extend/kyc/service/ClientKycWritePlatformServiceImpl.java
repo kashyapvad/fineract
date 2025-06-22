@@ -149,12 +149,12 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                             .withClientId(clientId).build();
 
                 } catch (Exception e) {
-                    log.error("Error during API verification: {}", e.getMessage(), e);
+                    log.error("Error during API verification: {}", e);
                     throw new RuntimeException("API verification failed: " + e.getMessage(), e);
                 }
 
             } catch (Exception e) {
-                log.error("Error processing KYC API verification command: {}", e.getMessage(), e);
+                log.error("Error processing KYC API verification command: {}", e);
                 throw e;
             }
 
@@ -162,7 +162,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
             log.error("Provider not available during KYC verification: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error during KYC API verification: {}", e.getMessage(), e);
+            log.error("Unexpected error during KYC API verification: {}", e);
             throw e;
         }
     }
@@ -221,7 +221,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                     .withClientId(clientId).build();
 
         } catch (Exception e) {
-            log.error("Error processing KYC manual verification command: {}", e.getMessage(), e);
+            log.error("Error processing KYC manual verification command: {}", e);
             throw e;
         }
     }
@@ -298,7 +298,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                     .withClientId(clientId).build();
 
         } catch (Exception e) {
-            log.error("Error processing KYC manual unverification command: {}", e.getMessage(), e);
+            log.error("Error processing KYC manual unverification command: {}", e);
             throw e;
         }
     }
@@ -387,7 +387,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                     .withClientId(clientId).build();
 
         } catch (Exception e) {
-            log.error("Error processing manual KYC details creation: {}", e.getMessage(), e);
+            log.error("Error processing manual KYC details creation: {}", e);
             throw e;
         }
     }
@@ -492,7 +492,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                     .build();
 
         } catch (Exception e) {
-            log.error("Error processing KYC details update command: {}", e.getMessage(), e);
+            log.error("Error processing KYC details update command: {}", e);
             throw e;
         }
     }
@@ -541,7 +541,7 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
                     .build();
 
         } catch (Exception e) {
-            log.error("Error processing KYC details deletion command: {}", e.getMessage(), e);
+            log.error("Error processing KYC details deletion command: {}", e);
             throw e;
         }
     }

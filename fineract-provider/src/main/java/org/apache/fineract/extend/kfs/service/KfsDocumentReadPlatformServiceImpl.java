@@ -189,7 +189,7 @@ public class KfsDocumentReadPlatformServiceImpl implements KfsDocumentReadPlatfo
             return fileContent;
 
         } catch (IOException e) {
-            log.error("Error reading file for document ID {}: {}", documentId, e.getMessage(), e);
+            log.error("Error reading file for document ID {}", documentId, e);
             throw new RuntimeException("Error reading document file: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Error retrieving KFS document with ID: {}", documentId, e);
@@ -249,7 +249,7 @@ public class KfsDocumentReadPlatformServiceImpl implements KfsDocumentReadPlatfo
             return statistics;
 
         } catch (Exception e) {
-            log.error("Error generating KFS document statistics: {}", e.getMessage(), e);
+            log.error("Error generating KFS document statistics: {}", e);
             throw new PlatformDataIntegrityException("error.msg.kfs.document.statistics.error",
                     "Error generating document statistics: " + e.getMessage(), e);
         }
