@@ -647,7 +647,7 @@ public class KfsPoiGenerationServiceImpl implements KfsDocxGenerationService {
         // Handle multi-line content in column 2
         XWPFTableCell cell2 = row.getCell(1);
         cell2.removeParagraph(0);
-        String[] col2Lines = col2Text.split("\n");
+        String[] col2Lines = splitLines(col2Text);
         for (String line : col2Lines) {
             if (!line.trim().isEmpty()) {
                 cell2.addParagraph().createRun().setText(sanitizeText(line));
@@ -660,7 +660,7 @@ public class KfsPoiGenerationServiceImpl implements KfsDocxGenerationService {
         // Handle multi-line content in column 3
         XWPFTableCell cell3 = row.getCell(2);
         cell3.removeParagraph(0);
-        String[] col3Lines = col3Text.split("\n");
+        String[] col3Lines = splitLines(col3Text);
         for (String line : col3Lines) {
             if (!line.trim().isEmpty()) {
                 cell3.addParagraph().createRun().setText(sanitizeText(line));
@@ -672,6 +672,17 @@ public class KfsPoiGenerationServiceImpl implements KfsDocxGenerationService {
     }
 
     // Utility methods
+
+    /**
+     * Helper method to split text by newlines following DRY principle. Centralizes line splitting logic to avoid code
+     * duplication.
+     */
+    private String[] splitLines(String text) {
+        if (text == null || text.isEmpty()) {
+            return new String[0];
+        }
+        return text.split("\\n");
+    }
 
     private void createCenteredParagraph(XWPFDocument document, String text) {
         XWPFParagraph paragraph = document.createParagraph();
@@ -686,7 +697,9 @@ public class KfsPoiGenerationServiceImpl implements KfsDocxGenerationService {
     }
 
     private String sanitizeText(String text) {
-        if (text == null) return "";
+        if (text == null) {
+            return "";
+        }
         return text.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]", "");
     }
 
