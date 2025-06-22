@@ -39,11 +39,16 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationRequest;
+import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationResult;
 import org.apache.fineract.extend.kfs.dto.KfsDocumentRequest;
 import org.apache.fineract.extend.kfs.dto.KfsDocumentResponse;
 import org.apache.fineract.extend.kfs.dto.KfsDocumentStatistics;
+import org.apache.fineract.extend.kfs.service.KfsDocumentGenerationService;
 import org.apache.fineract.extend.kfs.service.KfsDocumentReadPlatformService;
 import org.apache.fineract.extend.kfs.service.KfsDocumentWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
@@ -55,9 +60,6 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 /**
@@ -81,13 +83,15 @@ public class KfsDocumentApiResource {
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final ObjectMapper objectMapper;
+    private final KfsDocumentGenerationService kfsDocumentGenerationService;
 
     @Autowired
     public KfsDocumentApiResource(final PlatformSecurityContext context,
             final KfsDocumentReadPlatformService kfsDocumentReadPlatformService,
             final KfsDocumentWritePlatformService kfsDocumentWritePlatformService,
             final DefaultToApiJsonSerializer<Object> toApiJsonSerializer, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final ObjectMapper objectMapper) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService, final ObjectMapper objectMapper,
+            final KfsDocumentGenerationService kfsDocumentGenerationService) {
         this.context = context;
         this.kfsDocumentReadPlatformService = kfsDocumentReadPlatformService;
         this.kfsDocumentWritePlatformService = kfsDocumentWritePlatformService;
@@ -95,6 +99,7 @@ public class KfsDocumentApiResource {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
         this.objectMapper = objectMapper;
+        this.kfsDocumentGenerationService = kfsDocumentGenerationService;
     }
 
     /**
@@ -260,38 +265,118 @@ public class KfsDocumentApiResource {
     }
 
     /**
-     * Download a KFS document file
+     * Download a KFS document file (supports both docx4j and POI engines)
      */
     @GET
     @Path("/{documentId}/download")
     @Produces({ MediaType.APPLICATION_OCTET_STREAM })
     @Operation(summary = "Download KFS Document", description = "Downloads the KFS document file")
     @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "KFS document downloaded successfully"),
-            @ApiResponse(responseCode = "404", description = "KFS document not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Forbidden") })
-    public ResponseEntity<byte[]> downloadKfsDocument(
-            @PathParam("documentId") @Parameter(description = "KFS document ID") final Long documentId) {
-
-        log.debug("Downloading KFS document with ID: {}", documentId);
+            @ApiResponse(responseCode = "404", description = "Document not found") })
+    public Response downloadKfsDocument(@PathParam("documentId") @Parameter(description = "Document ID") final Long documentId,
+            @QueryParam("engine") @Parameter(description = "Generation engine: docx4j or poi") final String engine) {
+        this.context.authenticatedUser();
 
         try {
-            byte[] fileContent = kfsDocumentReadPlatformService.downloadKfsDocument(documentId);
+            log.info("Download KFS document requested for ID: {} using engine: {}", documentId, engine);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"kfs-document-" + documentId + ".pdf\"");
-            headers.add(HttpHeaders.CONTENT_TYPE, "application/pdf");
+            // Determine which generation engine to use
+            boolean usePoi = "poi".equalsIgnoreCase(engine);
+            String filename = "kfs_document_" + documentId + ".docx";
 
-            log.info("KFS document download successful for ID: {}", documentId);
+            // Use the main generation service (which handles both POI and docx4j internally)
+            byte[] documentBytes;
+            log.info("Generating KFS document for ID: {} using unified generation service", documentId);
 
-            return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
+            try {
+                // Create request object - assuming documentId corresponds to loanId
+                KfsDocumentGenerationRequest request = new KfsDocumentGenerationRequest();
+                request.setLoanId(documentId);
 
-        } catch (PlatformApiDataValidationException e) {
-            log.error("Error downloading KFS document with ID: {}", documentId, e);
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+                KfsDocumentGenerationResult result = kfsDocumentGenerationService.generateKfsDocument(request, null);
+                if (!"SUCCESS".equals(result.getStatus())) {
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity("Failed to generate KFS document: " + result.getMessage()).build();
+                }
+                documentBytes = result.getDocumentContent();
+            } catch (Exception e) {
+                log.error("Error generating KFS document for ID: {}", documentId, e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error generating document: " + e.getMessage())
+                        .build();
+            }
+
+            if (documentBytes == null || documentBytes.length == 0) {
+                log.warn("Generated document is empty for ID: {}", documentId);
+                return Response.status(Response.Status.NOT_FOUND).entity("Document content is empty").build();
+            }
+
+            log.info("KFS document generated successfully for ID: {}, size: {} bytes using {} engine", documentId, documentBytes.length,
+                    usePoi ? "POI" : "docx4j");
+
+            return Response.ok(documentBytes, MediaType.APPLICATION_OCTET_STREAM)
+                    .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                    .header("Content-Length", documentBytes.length).build();
+
         } catch (Exception e) {
-            log.error("Unexpected error downloading KFS document with ID: {}", documentId, e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("Error downloading KFS document for ID: {}", documentId, e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error downloading KFS document: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * Generate and preview KFS document using POI
+     */
+    @GET
+    @Path("/{loanId}/generate-poi")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Generate KFS Document using POI", description = "Generates KFS document using Apache POI engine")
+    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "KFS document generated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request"),
+            @ApiResponse(responseCode = "404", description = "Loan not found") })
+    public String generateKfsDocumentWithPoi(@PathParam("loanId") @Parameter(description = "Loan ID") final Long loanId,
+            @QueryParam("preview") @Parameter(description = "Generate preview") final Boolean preview) {
+        this.context.authenticatedUser();
+
+        try {
+            log.info("Generate KFS document requested for loan ID: {}, preview: {}", loanId, preview);
+
+            KfsDocumentGenerationRequest request = new KfsDocumentGenerationRequest();
+            request.setLoanId(loanId);
+            request.setPreview(Boolean.TRUE.equals(preview));
+
+            KfsDocumentGenerationResult result;
+            if (Boolean.TRUE.equals(preview)) {
+                result = kfsDocumentGenerationService.previewKfsDocument(request, null);
+            } else {
+                result = kfsDocumentGenerationService.generateKfsDocument(request, null);
+            }
+
+            // Create response
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", "SUCCESS".equals(result.getStatus()));
+            response.put("message", result.getMessage());
+            response.put("loanId", loanId);
+            response.put("documentSizeBytes", result.getDocumentContent() != null ? result.getDocumentContent().length : 0);
+            response.put("generationEngine", "Unified Generation Service");
+            response.put("preview", Boolean.TRUE.equals(preview));
+
+            if ("SUCCESS".equals(result.getStatus())) {
+                log.info("KFS document generated successfully for loan ID: {}, size: {} bytes", loanId,
+                        result.getDocumentContent() != null ? result.getDocumentContent().length : 0);
+            } else {
+                log.warn("KFS document generation failed for loan ID: {}, error: {}", loanId, result.getMessage());
+            }
+
+            return this.toApiJsonSerializer.serialize(response);
+
+        } catch (Exception e) {
+            log.error("Error generating KFS document with POI for loan ID: {}", loanId, e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Error generating KFS document: " + e.getMessage());
+            errorResponse.put("loanId", loanId);
+            return this.toApiJsonSerializer.serialize(errorResponse);
         }
     }
 
