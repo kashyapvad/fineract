@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.fineract.extend.kfs.domain.KfsDocument;
@@ -222,12 +223,14 @@ public class KfsDocumentReadPlatformServiceImpl implements KfsDocumentReadPlatfo
                     .average().orElse(0.0);
 
             // Get documents generated today
-            long documentsGeneratedToday = this.kfsDocumentRepository.findByGenerationDateBetween(LocalDate.now(), LocalDate.now()).size();
+            long documentsGeneratedToday = this.kfsDocumentRepository
+                    .findByGenerationDateBetween(LocalDate.now(ZoneId.systemDefault()), LocalDate.now(ZoneId.systemDefault())).size();
 
             // Get documents delivered today
             long documentsDeliveredToday = allDocuments.stream()
                     .filter(doc -> "DELIVERED".equals(doc.getDocumentStatus()) || "ACKNOWLEDGED".equals(doc.getDocumentStatus()))
-                    .filter(doc -> doc.getDeliveryDate() != null && doc.getDeliveryDate().equals(LocalDate.now())).count();
+                    .filter(doc -> doc.getDeliveryDate() != null && doc.getDeliveryDate().equals(LocalDate.now(ZoneId.systemDefault())))
+                    .count();
 
             KfsDocumentStatistics statistics = new KfsDocumentStatistics();
             statistics.setTotalDocuments(totalDocuments);

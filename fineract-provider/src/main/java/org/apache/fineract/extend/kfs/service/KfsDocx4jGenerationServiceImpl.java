@@ -18,13 +18,18 @@
  */
 package org.apache.fineract.extend.kfs.service;
 
+import com.google.common.base.Splitter;
 import jakarta.xml.bind.JAXBContext;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.extend.kfs.dto.KfsDocumentData;
@@ -173,7 +178,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             result.setStatus("SUCCESS");
             result.setMessage("KFS document generated successfully using docx4j");
             result.setDocumentContent(documentBytes);
-            result.setGenerationDate(LocalDate.now());
+            result.setGenerationDate(LocalDate.now(ZoneId.systemDefault()));
             result.setFileSize((long) documentBytes.length);
 
             log.info("Successfully generated KFS document for loan ID: {} (Size: {} bytes)", request.getLoanId(), documentBytes.length);
@@ -185,7 +190,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             KfsDocumentGenerationResult result = new KfsDocumentGenerationResult();
             result.setStatus("FAILED");
             result.setMessage("Document generation failed: " + e.getMessage());
-            result.setGenerationDate(LocalDate.now());
+            result.setGenerationDate(LocalDate.now(ZoneId.systemDefault()));
 
             return result;
         }
@@ -281,7 +286,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         String rtfContent = "{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 " + textContent.replace("\n", "\\par ")
                 + "}";
 
-        return rtfContent.getBytes("UTF-8");
+        return rtfContent.getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -1381,7 +1386,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         // Add second column (Parameter) - handle multi-line text safely
         Tc tc2 = factory.createTc();
         addCellProperties(tc2, factory);
-        String[] col2Lines = safeCol2.split("\\n");
+        List<String> col2Lines = Splitter.on(Pattern.compile("\\n")).splitToList(safeCol2);
         for (String line : col2Lines) {
             String safeLine = sanitizeXmlText(line);
             if (!safeLine.trim().isEmpty()) {
@@ -1398,7 +1403,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
         // Add third column (Details) - handle multi-line text safely
         Tc tc3 = factory.createTc();
         addCellProperties(tc3, factory);
-        String[] col3Lines = safeCol3.split("\\n");
+        List<String> col3Lines = Splitter.on(Pattern.compile("\\n")).splitToList(safeCol3);
         for (String line : col3Lines) {
             String safeLine = sanitizeXmlText(line);
             if (!safeLine.trim().isEmpty()) {

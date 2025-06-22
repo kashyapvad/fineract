@@ -21,6 +21,7 @@ package org.apache.fineract.extend.kfs.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -128,8 +129,8 @@ public class KfsDataMappingServiceImpl implements KfsDataMappingService {
                 .companyRegistrationNumber(getCompanyRegistrationNumber()).companyLicenseNumber(getCompanyLicenseNumber())
 
                 // Document Information
-                .documentType("Key Facts Statement").generationDate(LocalDate.now()).templateVersion("N/A").regulatoryCompliance("N/A")
-                .build();
+                .documentType("Key Facts Statement").generationDate(LocalDate.now(ZoneId.systemDefault())).templateVersion("N/A")
+                .regulatoryCompliance("N/A").build();
     }
 
     @Override

@@ -38,14 +38,9 @@ dependencies {
     // JAXB implementation for docx4j support
     // Core JAXB dependencies are in main dependencies.gradle
     // docx4j needs additional JAXB runtime implementation for ContextFactory
-    implementation 'org.glassfish.jaxb:jaxb-core:4.0.2'
-    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.2'
-
-    // =============================================================================
-    // OPTIONAL: DOTENV SUPPORT
-    // =============================================================================
-    // dotenv-java for loading .env files in development environment
-    implementation 'io.github.cdimascio:dotenv-java:3.2.0'
+    // Using compatible versions: jaxb-runtime 2.3.6 with jaxb-core 2.3.0.1
+    implementation 'org.glassfish.jaxb:jaxb-core:2.3.0.1'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.6'
 
     // =============================================================================
     // CREDIT BUREAU / KYC DEPENDENCIES
@@ -60,4 +55,25 @@ dependencies {
     // =============================================================================
     // Add test-specific dependencies for extend module here
     // testImplementation 'org.testcontainers:testcontainers:1.19.0'
+}
+
+// =============================================================================
+// BUILD ORDER FIX FOR COMPILATION ISSUES
+// =============================================================================
+
+// Fix for fineract-provider: ensure test compilation runs after main compilation
+tasks.named('compileTestJava').configure {
+    dependsOn tasks.named('compileJava')
+}
+
+// Cross-project fix for fineract-command compilation issues
+// This ensures fineract-command test compilation depends on its main compilation
+// Applied from extend module to avoid upstream changes
+gradle.projectsEvaluated {
+    def commandProject = rootProject.findProject(':fineract-command')
+    if (commandProject) {
+        commandProject.tasks.named('compileTestJava').configure {
+            dependsOn commandProject.tasks.named('compileJava')
+        }
+    }
 }

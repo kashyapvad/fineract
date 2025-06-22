@@ -30,6 +30,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -230,7 +231,7 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
         this.verificationProvider = verificationProvider;
         this.apiResponseData = apiResponse;
         this.verifiedByUser = verifiedByUser;
-        this.lastVerifiedOn = LocalDate.now();
+        this.lastVerifiedOn = LocalDate.now(ZoneId.systemDefault());
         this.verificationNotes = notes;
 
         // Update individual verification status based on results
@@ -264,7 +265,7 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
     public void markManualVerificationCompleted(AppUser verifiedByUser, Map<String, Boolean> verificationResults, String notes) {
         this.verificationMethod = KycVerificationMethod.MANUAL;
         this.verifiedByUser = verifiedByUser;
-        this.lastVerifiedOn = LocalDate.now();
+        this.lastVerifiedOn = LocalDate.now(ZoneId.systemDefault());
         this.verificationNotes = notes;
         this.verificationProvider = null; // Clear provider for manual verification
         this.apiResponseData = null; // Clear API response for manual verification

@@ -33,6 +33,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -204,7 +205,8 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
 
         return new ClientCreditReportDetails().setClient(client).setReportType(reportType).setReportStatus(CreditBureauReportStatus.SUCCESS)
                 .setCreditBureauProvider(creditBureauProvider).setProviderReportId(providerReportId).setRawProviderResponse(rawResponse)
-                .setRequestedOn(LocalDateTime.now()).setRequestedByUser(requestedByUser).setReportGeneratedOn(LocalDate.now());
+                .setRequestedOn(LocalDateTime.now(ZoneId.systemDefault())).setRequestedByUser(requestedByUser)
+                .setReportGeneratedOn(LocalDate.now(ZoneId.systemDefault()));
     }
 
     /**
@@ -215,7 +217,7 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
 
         return new ClientCreditReportDetails().setClient(client).setReportType(reportType).setReportStatus(CreditBureauReportStatus.FAILURE)
                 .setCreditBureauProvider(creditBureauProvider).setErrorCode(errorCode).setErrorMessage(errorMessage)
-                .setRequestedOn(LocalDateTime.now()).setRequestedByUser(requestedByUser);
+                .setRequestedOn(LocalDateTime.now(ZoneId.systemDefault())).setRequestedByUser(requestedByUser);
     }
 
     /**
@@ -225,8 +227,8 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
             String creditBureauProvider, String providerReportId, AppUser requestedByUser) {
 
         return new ClientCreditReportDetails().setClient(client).setReportType(reportType).setReportStatus(CreditBureauReportStatus.PENDING)
-                .setCreditBureauProvider(creditBureauProvider).setProviderReportId(providerReportId).setRequestedOn(LocalDateTime.now())
-                .setRequestedByUser(requestedByUser);
+                .setCreditBureauProvider(creditBureauProvider).setProviderReportId(providerReportId)
+                .setRequestedOn(LocalDateTime.now(ZoneId.systemDefault())).setRequestedByUser(requestedByUser);
     }
 
     /**
@@ -365,7 +367,7 @@ public class ClientCreditReportDetails extends AbstractAuditableWithUTCDateTimeC
         this.reportStatus = CreditBureauReportStatus.FAILURE;
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
-        this.reportGeneratedOn = LocalDate.now();
+        this.reportGeneratedOn = LocalDate.now(ZoneId.systemDefault());
     }
 
     // Status Check Methods

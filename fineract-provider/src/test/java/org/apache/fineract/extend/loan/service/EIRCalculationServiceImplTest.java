@@ -18,9 +18,14 @@
  */
 package org.apache.fineract.extend.loan.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -249,18 +254,6 @@ class EIRCalculationServiceImplTest {
         // Test will be implemented when we access the actual method
         // For now, this validates the service creation
         assertNotNull(eirCalculationService);
-    }
-
-    private void setupMockLoan() {
-        when(mockLoan.getPrincipal()).thenReturn(mockPrincipalMoney);
-        when(mockPrincipalMoney.getAmount()).thenReturn(PRINCIPAL_AMOUNT);
-        when(mockLoan.deriveSumTotalOfChargesDueAtDisbursement()).thenReturn(CHARGES_DUE_AT_DISBURSEMENT);
-        when(mockLoan.getNumberOfRepayments()).thenReturn(NUMBER_OF_INSTALLMENTS);
-        when(mockLoan.getTermFrequency()).thenReturn(TENURE_MONTHS);
-        when(mockLoan.getTermPeriodFrequencyType()).thenReturn(PeriodFrequencyType.MONTHS);
-        when(mockLoan.getCurrencyCode()).thenReturn("USD");
-        when(mockLoan.getCurrency()).thenReturn(mockCurrency);
-        when(mockLoan.getId()).thenReturn(1L);
     }
 
     private void setupMockLoanWithZeroCharges() {

@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -63,7 +64,7 @@ class EirCalculationEntityTest {
     @Test
     void testEirCalculationDefaultValues() {
         // When
-        EirCalculation eirCalculation = EirCalculation.builder().loanId(1L).calculationDate(LocalDate.now())
+        EirCalculation eirCalculation = EirCalculation.builder().loanId(1L).calculationDate(LocalDate.now(ZoneId.systemDefault()))
                 .effectiveInterestRate(new BigDecimal("12.00")).principalAmount(new BigDecimal("50000.00")).calculationMethod("IRR_METHOD")
                 .build();
 

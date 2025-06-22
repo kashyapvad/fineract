@@ -18,12 +18,19 @@
  */
 package org.apache.fineract.extend.kfs.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -344,16 +351,16 @@ class KfsDocumentGenerationServiceTest {
 
         // Create 23 regular installments
         for (int i = 1; i <= 23; i++) {
-            schedule.add(RepaymentScheduleData.builder().installmentNumber(i).dueDate(LocalDate.now().plusMonths(i)).totalAmount(EMI_AMOUNT)
-                    .outstandingBalance(outstanding).formattedEmiAmount("5,000.00").formattedOutstandingBalance(formatAmount(outstanding))
-                    .build());
+            schedule.add(RepaymentScheduleData.builder().installmentNumber(i).dueDate(LocalDate.now(ZoneId.systemDefault()).plusMonths(i))
+                    .totalAmount(EMI_AMOUNT).outstandingBalance(outstanding).formattedEmiAmount("5,000.00")
+                    .formattedOutstandingBalance(formatAmount(outstanding)).build());
             outstanding = outstanding.subtract(new BigDecimal("3811.00")); // Approximate principal reduction
         }
 
         // Create final installment
-        schedule.add(
-                RepaymentScheduleData.builder().installmentNumber(24).dueDate(LocalDate.now().plusMonths(24)).totalAmount(FINAL_EMI_AMOUNT)
-                        .outstandingBalance(BigDecimal.ZERO).formattedEmiAmount("1,082.00").formattedOutstandingBalance("0.00").build());
+        schedule.add(RepaymentScheduleData.builder().installmentNumber(24).dueDate(LocalDate.now(ZoneId.systemDefault()).plusMonths(24))
+                .totalAmount(FINAL_EMI_AMOUNT).outstandingBalance(BigDecimal.ZERO).formattedEmiAmount("1,082.00")
+                .formattedOutstandingBalance("0.00").build());
 
         return schedule;
     }
@@ -361,9 +368,9 @@ class KfsDocumentGenerationServiceTest {
     private List<RepaymentScheduleData> createLargeRepaymentSchedule(int months) {
         List<RepaymentScheduleData> schedule = new ArrayList<>();
         for (int i = 1; i <= months; i++) {
-            schedule.add(RepaymentScheduleData.builder().installmentNumber(i).dueDate(LocalDate.now().plusMonths(i)).totalAmount(EMI_AMOUNT)
-                    .outstandingBalance(new BigDecimal("50000.00")).formattedEmiAmount("5,000.00").formattedOutstandingBalance("50,000.00")
-                    .build());
+            schedule.add(RepaymentScheduleData.builder().installmentNumber(i).dueDate(LocalDate.now(ZoneId.systemDefault()).plusMonths(i))
+                    .totalAmount(EMI_AMOUNT).outstandingBalance(new BigDecimal("50000.00")).formattedEmiAmount("5,000.00")
+                    .formattedOutstandingBalance("50,000.00").build());
         }
         return schedule;
     }

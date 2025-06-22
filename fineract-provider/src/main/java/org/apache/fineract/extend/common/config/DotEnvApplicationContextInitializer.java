@@ -72,29 +72,31 @@ public class DotEnvApplicationContextInitializer implements ApplicationContextIn
     private Properties loadEnvFile(Path envFile) throws IOException {
         Properties properties = new Properties();
 
-        Files.lines(envFile).forEach(line -> {
-            line = line.trim();
+        try (var lines = Files.lines(envFile)) {
+            lines.forEach(line -> {
+                line = line.trim();
 
-            // Skip empty lines and comments
-            if (line.isEmpty() || line.startsWith("#")) {
-                return;
-            }
-
-            // Parse KEY=VALUE format
-            int equalIndex = line.indexOf('=');
-            if (equalIndex > 0) {
-                String key = line.substring(0, equalIndex).trim();
-                String value = line.substring(equalIndex + 1).trim();
-
-                // Remove quotes if present
-                if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
-                    value = value.substring(1, value.length() - 1);
+                // Skip empty lines and comments
+                if (line.isEmpty() || line.startsWith("#")) {
+                    return;
                 }
 
-                properties.setProperty(key, value);
-                log.debug("Loaded environment variable for extend module: {}", key);
-            }
-        });
+                // Parse KEY=VALUE format
+                int equalIndex = line.indexOf('=');
+                if (equalIndex > 0) {
+                    String key = line.substring(0, equalIndex).trim();
+                    String value = line.substring(equalIndex + 1).trim();
+
+                    // Remove quotes if present
+                    if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+                        value = value.substring(1, value.length() - 1);
+                    }
+
+                    properties.setProperty(key, value);
+                    log.debug("Loaded environment variable for extend module: {}", key);
+                }
+            });
+        }
 
         return properties;
     }

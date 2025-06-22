@@ -25,6 +25,7 @@ import com.google.gson.JsonObject;
 import jakarta.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -134,7 +135,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 final String reportSummary = providerResponse.getReportSummary();
                 final LocalDate reportGeneratedOn = providerResponse.getReportGeneratedOn() != null
                         ? providerResponse.getReportGeneratedOn()
-                        : LocalDate.now();
+                        : LocalDate.now(ZoneId.systemDefault());
 
                 // Update report as successful with basic metadata
                 savedDetails.markAsSuccessful(reportData, reportGeneratedOn);
@@ -427,7 +428,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                 try {
                     final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport,
                             scoreDetail.path("type").asText("UNKNOWN"), scoreDetail.path("version").asText("1.0"),
-                            scoreDetail.path("name").asText(), scoreDetail.path("value").asInt(), LocalDate.now());
+                            scoreDetail.path("name").asText(), scoreDetail.path("value").asInt(), LocalDate.now(ZoneId.systemDefault()));
 
                     // Add scoring elements if available
                     if (scoreDetail.has("scoringElements") && scoreDetail.get("scoringElements").isArray()) {
@@ -448,7 +449,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             final String rating = data.has("creditRating") ? data.get("creditRating").asText() : null;
 
             final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport, "GENERAL", "1.0",
-                    "General Credit Score", score, LocalDate.now());
+                    "General Credit Score", score, LocalDate.now(ZoneId.systemDefault()));
 
             if (rating != null) {
                 scoreDetails.setScoreReason(rating);
@@ -667,7 +668,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
 
                     if (creditScore != null) {
                         final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport, scoreModel,
-                                scoreVersion, scoreName, creditScore, LocalDate.now());
+                                scoreVersion, scoreName, creditScore, LocalDate.now(ZoneId.systemDefault()));
 
                         if (scoreReason != null) {
                             scoreDetails.setScoreReason(scoreReason);
@@ -685,7 +686,8 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             String scoreModel = command.hasParameter("scoreModel") ? command.stringValueOfParameterNamed("scoreModel") : "MANUAL";
             String scoreVersion = command.hasParameter("scoreVersion") ? command.stringValueOfParameterNamed("scoreVersion") : "1.0";
             String scoreName = command.hasParameter("scoreName") ? command.stringValueOfParameterNamed("scoreName") : "Manual Entry";
-            LocalDate scoreDate = command.hasParameter("scoreDate") ? command.localDateValueOfParameterNamed("scoreDate") : LocalDate.now();
+            LocalDate scoreDate = command.hasParameter("scoreDate") ? command.localDateValueOfParameterNamed("scoreDate")
+                    : LocalDate.now(ZoneId.systemDefault());
 
             final ClientCreditScoreDetails scoreDetails = ClientCreditScoreDetails.createScore(creditReport, scoreModel, scoreVersion,
                     scoreName, command.integerValueOfParameterNamedDefaultToNullIfZero("creditScore"), scoreDate);
@@ -748,7 +750,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                             existingScore.setScoreVersion(scoreVersion);
                             existingScore.setScoreName(scoreName);
                             existingScore.setScoreReason(scoreReason);
-                            existingScore.setScoreDate(LocalDate.now());
+                            existingScore.setScoreDate(LocalDate.now(ZoneId.systemDefault()));
 
                             log.info("UPDATED existing score for model={}", scoreModel);
                         } else {
@@ -756,7 +758,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
                             log.info("ADDING new score for model={}, score={}", scoreModel, creditScore);
 
                             final ClientCreditScoreDetails newScoreDetails = ClientCreditScoreDetails.createScore(creditReport, scoreModel,
-                                    scoreVersion, scoreName, creditScore, LocalDate.now());
+                                    scoreVersion, scoreName, creditScore, LocalDate.now(ZoneId.systemDefault()));
 
                             if (scoreReason != null) {
                                 newScoreDetails.setScoreReason(scoreReason);
@@ -800,7 +802,8 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
             String scoreModel = command.hasParameter("scoreModel") ? command.stringValueOfParameterNamed("scoreModel") : "MANUAL";
             String scoreVersion = command.hasParameter("scoreVersion") ? command.stringValueOfParameterNamed("scoreVersion") : "1.0";
             String scoreName = command.hasParameter("scoreName") ? command.stringValueOfParameterNamed("scoreName") : "Manual Entry";
-            LocalDate scoreDate = command.hasParameter("scoreDate") ? command.localDateValueOfParameterNamed("scoreDate") : LocalDate.now();
+            LocalDate scoreDate = command.hasParameter("scoreDate") ? command.localDateValueOfParameterNamed("scoreDate")
+                    : LocalDate.now(ZoneId.systemDefault());
             Integer creditScore = command.integerValueOfParameterNamedDefaultToNullIfZero("creditScore");
 
             log.info("SINGLE SCORE UPDATE: Processing single score for model={}, score={}", scoreModel, creditScore);
@@ -878,7 +881,7 @@ public class ClientCreditBureauWritePlatformServiceImpl implements ClientCreditB
 
         // Handle duplicate credit score constraint
         if (mostSpecificMessage.contains("uk_extend_credit_score_report_model")
-                || mostSpecificMessage.contains("duplicate entry") && mostSpecificMessage.contains("credit_report_id")) {
+                || (mostSpecificMessage.contains("duplicate entry") && mostSpecificMessage.contains("credit_report_id"))) {
 
             final String defaultMessage = "A credit score with this model already exists for this report. Please use a different score model or update the existing score.";
             return new PlatformDataIntegrityException("error.msg.credit.score.duplicate.model", defaultMessage, "scoreModel",

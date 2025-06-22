@@ -19,6 +19,7 @@
 package org.apache.fineract.extend.kfs.service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import org.apache.fineract.extend.kfs.domain.KfsDocument;
 import org.apache.fineract.extend.kfs.domain.KfsDocumentRepository;
 import org.apache.fineract.extend.kfs.domain.KfsTemplate;
@@ -225,7 +226,7 @@ public class KfsDocumentWritePlatformServiceImpl implements KfsDocumentWritePlat
 
             // Set generation date if not provided
             if (document.getGenerationDate() == null) {
-                document.setGenerationDate(LocalDate.now());
+                document.setGenerationDate(LocalDate.now(ZoneId.systemDefault()));
             }
 
             // Set default status if not provided
@@ -346,7 +347,7 @@ public class KfsDocumentWritePlatformServiceImpl implements KfsDocumentWritePlat
 
             // Update delivery date if status is DELIVERED
             if ("DELIVERED".equals(status) && document.getDeliveryDate() == null) {
-                document.setDeliveryDate(LocalDate.now());
+                document.setDeliveryDate(LocalDate.now(ZoneId.systemDefault()));
             }
 
             this.kfsDocumentRepository.saveAndFlush(document);
@@ -470,7 +471,7 @@ public class KfsDocumentWritePlatformServiceImpl implements KfsDocumentWritePlat
         if (request.getGenerationDate() != null) {
             document.setGenerationDate(request.getGenerationDate());
         } else {
-            document.setGenerationDate(LocalDate.now());
+            document.setGenerationDate(LocalDate.now(ZoneId.systemDefault()));
         }
 
         // Set generated file path - generate if not provided

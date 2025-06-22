@@ -19,7 +19,12 @@
 
 package org.apache.fineract.extend.kfs.domain;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
@@ -27,6 +32,7 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Set;
 import org.apache.fineract.infrastructure.core.domain.ActionContext;
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
@@ -54,13 +60,13 @@ class KfsDocumentEntityTest {
     private static final Long EIR_CALCULATION_ID = 1L;
     private static final Long KFS_TEMPLATE_ID = 1L;
     private static final String DOCUMENT_REFERENCE_NUMBER = "KFS-2024-001";
-    private static final LocalDate GENERATION_DATE = LocalDate.now();
+    private static final LocalDate GENERATION_DATE = LocalDate.now(ZoneId.systemDefault());
     private static final String GENERATED_FILE_PATH = "/documents/kfs/2024/kfs-document-001.pdf";
     private static final Long FILE_SIZE = 1024L;
     private static final String CHECKSUM = "d41d8cd98f00b204e9800998ecf8427e";
     private static final String DOCUMENT_STATUS = "GENERATED";
     private static final String DELIVERY_METHOD = "EMAIL";
-    private static final LocalDate DELIVERY_DATE = LocalDate.now();
+    private static final LocalDate DELIVERY_DATE = LocalDate.now(ZoneId.systemDefault());
     private static final Boolean RECIPIENT_ACKNOWLEDGMENT = false;
 
     @BeforeEach
@@ -429,8 +435,8 @@ class KfsDocumentEntityTest {
     void testKfsDocumentDeliveryDateValidation() {
         // Given: Document with delivery date before generation date
         KfsDocument kfsDocument = createValidKfsDocument();
-        kfsDocument.setGenerationDate(LocalDate.now());
-        kfsDocument.setDeliveryDate(LocalDate.now().minusDays(1)); // Before generation
+        kfsDocument.setGenerationDate(LocalDate.now(ZoneId.systemDefault()));
+        kfsDocument.setDeliveryDate(LocalDate.now(ZoneId.systemDefault()).minusDays(1)); // Before generation
 
         // When: Validate entity
         Set<ConstraintViolation<KfsDocument>> violations = validator.validate(kfsDocument);
@@ -473,7 +479,7 @@ class KfsDocumentEntityTest {
             kfsDocument.setDeliveryMethod(DELIVERY_METHOD);
             kfsDocument.setDeliveryDate(DELIVERY_DATE);
             kfsDocument.setRecipientAcknowledgment(RECIPIENT_ACKNOWLEDGMENT);
-            kfsDocument.setAcknowledgmentDate(LocalDate.now().plusDays(1));
+            kfsDocument.setAcknowledgmentDate(LocalDate.now(ZoneId.systemDefault()).plusDays(1));
             kfsDocument.setDocumentMetadata(objectMapper.readTree("{\"version\":\"1.0\",\"format\":\"PDF\"}"));
 
             return kfsDocument;
