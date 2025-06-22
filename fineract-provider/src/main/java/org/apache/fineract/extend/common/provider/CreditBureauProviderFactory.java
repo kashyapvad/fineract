@@ -157,7 +157,7 @@ public class CreditBureauProviderFactory {
 
                 log.info("Successfully switched to credit bureau provider: {}", newProvider.getProviderName());
             } catch (Exception e) {
-                log.error("Failed to switch to provider {}: {}", providerName, e.getMessage());
+                log.error("Failed to switch to provider {}", providerName, e);
                 throw new ProviderConfigurationException("Failed to switch to provider " + providerName + ": " + e.getMessage(), e);
             }
         } else {

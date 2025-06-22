@@ -138,7 +138,6 @@ public class SurePassProvider implements CreditBureauProvider {
             }
 
         } catch (Exception e) {
-            log.error("Failed to pull customer data via SurePass: {}", e.getMessage(), e);
             if (e instanceof ProviderException) {
                 throw e;
             }
@@ -166,7 +165,6 @@ public class SurePassProvider implements CreditBureauProvider {
             return processAadhaarResponse(request, response);
 
         } catch (Exception e) {
-            log.error("Failed to verify Aadhaar via SurePass: {}", e.getMessage(), e);
             throw new ProviderException(getProviderName(), "AADHAAR_VERIFICATION_FAILED", "Aadhaar verification failed: " + e.getMessage(),
                     e, isRetryableError(e));
         }
@@ -191,7 +189,6 @@ public class SurePassProvider implements CreditBureauProvider {
             return processPanResponse(request, response);
 
         } catch (Exception e) {
-            log.error("Failed to verify PAN via SurePass: {}", e.getMessage(), e);
             throw new ProviderException(getProviderName(), "PAN_VERIFICATION_FAILED", "PAN verification failed: " + e.getMessage(), e,
                     isRetryableError(e));
         }
@@ -303,7 +300,6 @@ public class SurePassProvider implements CreditBureauProvider {
             return lastDigitsMatch && genderMatch;
 
         } catch (Exception e) {
-            log.error("Error validating Aadhaar data: {}", e.getMessage(), e);
             return false;
         }
     }
@@ -385,7 +381,6 @@ public class SurePassProvider implements CreditBureauProvider {
             return nameMatches;
 
         } catch (Exception e) {
-            log.error("Error validating PAN name: {}", e.getMessage(), e);
             return false;
         }
     }

@@ -253,7 +253,7 @@ public class KfsDocumentApiResource {
 
         log.debug("Deleting KFS document with ID: {}", documentId);
 
-        CommandProcessingResult result = kfsDocumentWritePlatformService.deleteKfsDocument(documentId);
+        kfsDocumentWritePlatformService.deleteKfsDocument(documentId);
 
         log.info("KFS document deleted successfully with ID: {}", documentId);
         return Response.noContent().build();

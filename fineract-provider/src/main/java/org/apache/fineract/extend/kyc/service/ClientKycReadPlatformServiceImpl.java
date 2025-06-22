@@ -84,8 +84,7 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
             log.warn("Platform domain rule exception for client {}: {}", clientId, apdre.getMessage());
             throw apdre;
         } catch (Exception e) {
-            log.error("Unexpected error retrieving KYC data for client {}: {} - {}", clientId, e.getClass().getSimpleName(), e.getMessage(),
-                    e);
+            log.error("Unexpected error retrieving KYC data for client {} - {}", clientId, e.getClass().getSimpleName(), e);
 
             // For unexpected errors, try to return a template if we can at least validate the client
             try {
@@ -93,7 +92,7 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
                 log.warn("Returning empty template for client {} due to unexpected error", clientId);
                 return ClientKycData.template(clientId, client.getDisplayName());
             } catch (Exception fallbackException) {
-                log.error("Fallback failed for client {}: {}", clientId, fallbackException.getMessage());
+                log.error("Fallback failed for client {}", clientId, fallbackException);
                 throw new RuntimeException("Failed to retrieve KYC data and fallback failed", fallbackException);
             }
         }
@@ -156,7 +155,7 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
             return resultMap;
 
         } catch (Exception e) {
-            log.error("Error in bulk KYC retrieval for {} clients: {}", clientIds.size(), e.getMessage(), e);
+            log.error("Error in bulk KYC retrieval for {} clients: {}", clientIds.size(), e);
 
             // Fallback: return templates for all requested clients if possible
             try {
@@ -272,7 +271,7 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
             log.warn("Client not found for template: {}", clientId);
             throw cnfe;
         } catch (Exception e) {
-            log.error("Error retrieving KYC template for client {}: {}", clientId, e.getMessage(), e);
+            log.error("Error retrieving KYC template for client {}", clientId, e);
             throw e;
         }
     }
@@ -344,7 +343,7 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
             return data;
 
         } catch (Exception e) {
-            log.error("Error mapping KYC entity to DTO for client {}: {}", entity.getClient().getId(), e.getMessage(), e);
+            log.error("Error mapping KYC entity to DTO for client {}", entity.getClient().getId(), e);
             // Return a basic template if mapping fails
             return ClientKycData.template(entity.getClient().getId(), entity.getClient().getDisplayName());
         }

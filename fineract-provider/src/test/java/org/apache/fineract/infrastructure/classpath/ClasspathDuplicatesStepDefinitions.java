@@ -190,6 +190,13 @@ public class ClasspathDuplicatesStepDefinitions implements En {
                 // for jakarta.inject, but we made jakarta.inject:jakarta.inject
                 // <optional>true in odlparent, and don't bundle it.
                 || resourcePath.startsWith("jakarta.inject/") //
+                // jakarta.activation duplicate from docx4j dependencies
+                || resourcePath.startsWith("jakarta/activation/") //
+                // jakarta.activation metadata files that can have duplicates
+                || resourcePath.equals("META-INF/mailcap.default") //
+                || resourcePath.equals("META-INF/mimetypes.default") //
+                // Commons logging duplicates between jcl-over-slf4j and spring-jcl
+                || resourcePath.startsWith("org/apache/commons/logging/") //
                 // Java 9 modules
                 || resourcePath.endsWith("module-info.class") //
                 || resourcePath.contains("findbugs") //

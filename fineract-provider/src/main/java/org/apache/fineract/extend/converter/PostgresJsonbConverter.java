@@ -36,7 +36,7 @@ import org.postgresql.util.PGobject;
 @Converter(autoApply = false)
 public class PostgresJsonbConverter implements AttributeConverter<JsonNode, Object> {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public Object convertToDatabaseColumn(JsonNode jsonNode) {
@@ -45,7 +45,7 @@ public class PostgresJsonbConverter implements AttributeConverter<JsonNode, Obje
         }
         try {
             // Convert JsonNode to String - PostgreSQL will cast this to JSONB
-            return objectMapper.writeValueAsString(jsonNode);
+            return OBJECT_MAPPER.writeValueAsString(jsonNode);
         } catch (JsonProcessingException e) {
             log.error("Error converting JsonNode to String for PostgreSQL JSONB", e);
             throw new IllegalArgumentException("Cannot convert JsonNode to PostgreSQL JSONB", e);
@@ -74,7 +74,7 @@ public class PostgresJsonbConverter implements AttributeConverter<JsonNode, Obje
                 return null;
             }
 
-            return objectMapper.readTree(jsonString);
+            return OBJECT_MAPPER.readTree(jsonString);
         } catch (JsonProcessingException e) {
             log.error("Error converting database data to JsonNode from PostgreSQL JSONB: {}", dbData, e);
             throw new IllegalArgumentException("Cannot convert PostgreSQL JSONB to JsonNode", e);

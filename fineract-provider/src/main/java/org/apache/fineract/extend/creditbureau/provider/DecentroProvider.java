@@ -118,7 +118,7 @@ public class DecentroProvider implements CreditBureauProvider {
             return mapCreditReportResponse(request.getReferenceId(), response);
 
         } catch (Exception e) {
-            log.error("Failed to generate credit report via Decentro: {}", e.getMessage(), e);
+            log.error("Failed to generate credit report via Decentro", e);
             throw new ProviderException(getProviderName(), "CREDIT_REPORT_FAILED", "Failed to generate credit report: " + e.getMessage(), e,
                     isRetryableError(e));
         }
@@ -140,7 +140,7 @@ public class DecentroProvider implements CreditBureauProvider {
             return mapCreditScoreResponse(request.getReferenceId(), response);
 
         } catch (Exception e) {
-            log.error("Failed to fetch credit score via Decentro: {}", e.getMessage(), e);
+            log.error("Failed to fetch credit score via Decentro", e);
             throw new ProviderException(getProviderName(), "CREDIT_SCORE_FAILED", "Failed to fetch credit score: " + e.getMessage(), e,
                     isRetryableError(e));
         }
@@ -162,7 +162,7 @@ public class DecentroProvider implements CreditBureauProvider {
             return mapCustomerDataResponse(request.getReferenceId(), response, request.getDocumentType());
 
         } catch (Exception e) {
-            log.error("Failed to pull customer data via Decentro: {}", e.getMessage(), e);
+            log.error("Failed to pull customer data via Decentro", e);
             throw new ProviderException(getProviderName(), "CUSTOMER_DATA_FAILED", "Failed to pull customer data: " + e.getMessage(), e,
                     isRetryableError(e));
         }
