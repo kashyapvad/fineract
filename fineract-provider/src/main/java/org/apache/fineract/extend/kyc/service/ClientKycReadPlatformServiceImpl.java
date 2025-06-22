@@ -155,7 +155,7 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
             return resultMap;
 
         } catch (Exception e) {
-            log.error("Error in bulk KYC retrieval for {} clients: {}", clientIds.size(), e);
+            log.error("Error in bulk KYC retrieval for {} clients", clientIds.size(), e);
 
             // Fallback: return templates for all requested clients if possible
             try {
