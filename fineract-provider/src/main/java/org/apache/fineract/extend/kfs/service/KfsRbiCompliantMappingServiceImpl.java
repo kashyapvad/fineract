@@ -57,6 +57,7 @@ public class KfsRbiCompliantMappingServiceImpl implements KfsRbiCompliantMapping
     /**
      * Creates RBI-compliant field mapping for KFS template with actual database data.
      */
+    @Override
     public Map<String, Object> createRbiCompliantFieldMapping(KfsDocumentData documentData) {
         log.info("Creating RBI-compliant KFS field mapping for loan ID: {}", documentData.getLoanId());
 

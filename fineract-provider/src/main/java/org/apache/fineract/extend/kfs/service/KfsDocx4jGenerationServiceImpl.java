@@ -18,23 +18,18 @@
  */
 package org.apache.fineract.extend.kfs.service;
 
-// NOTE: This service is temporarily disabled because docx4j dependencies have been removed
-// in favor of the POI-based implementation. To re-enable, uncomment the docx4j dependencies
-// in extend-dependencies.gradle and remove the @ConditionalOnClass annotation below.
-
-/*
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.stereotype.Service;
 
 /**
  * Advanced docx4j-based KFS document generation service.
  *
- * NOTE: This service is currently disabled because docx4j dependencies have been removed
- * in favor of the POI-based implementation. The POI implementation provides the same
- * functionality without JAXB version conflicts.
+ * NOTE: This service is currently disabled because docx4j dependencies have been removed in favor of the POI-based
+ * implementation. The POI implementation provides the same functionality without JAXB version conflicts.
  *
- * To re-enable this service:
- * 1. Uncomment the docx4j dependencies in extend-dependencies.gradle
- * 2. Remove the @ConditionalOnClass annotation below
- * 3. Uncomment the full implementation
+ * To re-enable this service: 1. Uncomment the docx4j dependencies in extend-dependencies.gradle 2. Remove
+ * the @ConditionalOnClass annotation below 3. Uncomment the full implementation
  */
 @Slf4j
 @Service("docx4jKfsDocxGenerationService")
