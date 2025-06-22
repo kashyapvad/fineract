@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.extend.kfs.service;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,18 +37,18 @@ import org.apache.fineract.extend.kfs.dto.RepaymentScheduleData;
 import org.springframework.stereotype.Service;
 
 /**
- * Main KFS document generation service implementation. Delegates to the docx4j service for actual document generation.
+ * Main KFS document generation service implementation. Uses POI engine for document generation.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class KfsDocumentGenerationServiceImpl implements KfsDocumentGenerationService {
 
-    private final KfsDocx4jGenerationService docx4jGenerationService;
+    private final KfsDocxGenerationService poiGenerationService;
 
     @Override
     public KfsDocumentGenerationResult generateKfsDocument(KfsDocumentGenerationRequest request, List<RepaymentScheduleData> scheduleData) {
-        return docx4jGenerationService.generateKfsDocument(request);
+        return poiGenerationService.generateKfsDocument(request);
     }
 
     @Override
@@ -59,7 +58,7 @@ public class KfsDocumentGenerationServiceImpl implements KfsDocumentGenerationSe
             KfsDocumentGenerationRequest request = KfsDocumentGenerationRequest.builder().loanId(loanId)
                     .templateId(baseRequest.getTemplateId()).deliveryMethod(baseRequest.getDeliveryMethod())
                     .preview(baseRequest.getPreview()).build();
-            results.add(docx4jGenerationService.generateKfsDocument(request));
+            results.add(poiGenerationService.generateKfsDocument(request));
         }
         return results;
     }
@@ -67,7 +66,7 @@ public class KfsDocumentGenerationServiceImpl implements KfsDocumentGenerationSe
     @Override
     public KfsDocumentGenerationResult previewKfsDocument(KfsDocumentGenerationRequest request, List<RepaymentScheduleData> scheduleData) {
         request.setPreview(true);
-        return docx4jGenerationService.previewKfsDocument(request);
+        return poiGenerationService.previewKfsDocument(request);
     }
 
     @Override
@@ -127,7 +126,7 @@ public class KfsDocumentGenerationServiceImpl implements KfsDocumentGenerationSe
 
     @Override
     public KfsDocumentGenerationResponse generateKfsDocument(KfsDocumentGenerationRequest request) {
-        KfsDocumentGenerationResult result = docx4jGenerationService.generateKfsDocument(request);
+        KfsDocumentGenerationResult result = poiGenerationService.generateKfsDocument(request);
         KfsDocumentGenerationResponse response = new KfsDocumentGenerationResponse();
         response.setGenerationStatus(result.getStatus());
         response.setSuccess("SUCCESS".equals(result.getStatus()));
@@ -137,16 +136,7 @@ public class KfsDocumentGenerationServiceImpl implements KfsDocumentGenerationSe
         // Include file content for frontend download
         if (result.getDocumentContent() != null) {
             response.setFileContent(java.util.Base64.getEncoder().encodeToString(result.getDocumentContent()));
-
-            // Detect output format for frontend
-            String content = new String(result.getDocumentContent(), StandardCharsets.UTF_8);
-            if (content.startsWith("{\\rtf")) {
-                response.setOutputFormat("RTF");
-                response.setErrorMessage(result.getMessage() + " (Generated as RTF due to DOCX processing issues)");
-                log.info("Document generated as RTF fallback for loan ID: {}", request.getLoanId());
-            } else {
-                response.setOutputFormat("DOCX");
-            }
+            response.setOutputFormat("DOCX");
         }
 
         return response;

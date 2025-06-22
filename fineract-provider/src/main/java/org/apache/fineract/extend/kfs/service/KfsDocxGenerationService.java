@@ -22,31 +22,40 @@ import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationRequest;
 import org.apache.fineract.extend.kfs.dto.KfsDocumentGenerationResult;
 
 /**
- * Modern KFS document generation service using docx4j with Content Controls (SDTs).
- *
- * This service uses structured MS Word templates with Content Controls instead of text placeholder replacement,
- * providing: - Clean template design in MS Word - Structured data binding - Support for complex layouts, tables, and
- * repeating sections - Professional document generation
+ * Service interface for generating KFS documents in DOCX format. This interface provides a common contract for
+ * different DOCX generation implementations such as POI-based and docx4j-based generators.
  */
-public interface KfsDocx4jGenerationService {
+public interface KfsDocxGenerationService {
 
     /**
-     * Generate KFS document using docx4j with Content Controls.
+     * Generate a KFS document in DOCX format based on the provided request.
      *
      * @param request
-     *            The generation request containing loan and client data
-     * @return Generation result with file path and metadata
+     *            The document generation request containing loan and borrower details
+     * @return KfsDocumentGenerationResult containing the generated document bytes and metadata
      */
     KfsDocumentGenerationResult generateKfsDocument(KfsDocumentGenerationRequest request);
 
     /**
-     * Preview KFS document without saving to database.
+     * Preview a KFS document without persisting it.
      *
      * @param request
-     *            The generation request
-     * @return Preview result with temporary file
+     *            The document generation request containing loan and borrower details
+     * @return KfsDocumentGenerationResult containing the preview document bytes and metadata
      */
     KfsDocumentGenerationResult previewKfsDocument(KfsDocumentGenerationRequest request);
 
-    // Additional methods can be added here as needed
+    /**
+     * Get the name/identifier of this generation service implementation.
+     *
+     * @return String identifier for this service (e.g., "poi", "docx4j")
+     */
+    String getServiceName();
+
+    /**
+     * Check if this service is available and properly configured.
+     *
+     * @return true if the service is available, false otherwise
+     */
+    boolean isAvailable();
 }

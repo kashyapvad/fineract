@@ -97,7 +97,7 @@ class KfsDocumentGenerationServiceTest {
     private AppUser mockUser;
 
     @Mock
-    private KfsDocx4jGenerationService docx4jGenerationService;
+    private KfsDocxGenerationService docxGenerationService;
 
     // Test data constants based on handoff document
     private static final Long LOAN_ID = 1L;
@@ -137,13 +137,13 @@ class KfsDocumentGenerationServiceTest {
         KfsDocumentGenerationRequest request = createGenerationRequest();
         List<RepaymentScheduleData> scheduleData = createRepaymentScheduleData();
 
-        // Mock the docx4j service response
+        // Mock the POI service response
         KfsDocumentGenerationResult expectedResult = new KfsDocumentGenerationResult();
         expectedResult.setStatus("SUCCESS");
         expectedResult.setDocumentId(1L);
         expectedResult.setMessage("KFS document generated successfully");
 
-        when(docx4jGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
+        when(docxGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
 
         // When: Generate KFS document
         KfsDocumentGenerationResult result = kfsDocumentGenerationService.generateKfsDocument(request, scheduleData);
@@ -153,7 +153,7 @@ class KfsDocumentGenerationServiceTest {
         assertEquals("SUCCESS", result.getStatus());
         assertEquals(1L, result.getDocumentId());
 
-        verify(docx4jGenerationService).generateKfsDocument(request);
+        verify(docxGenerationService).generateKfsDocument(request);
     }
 
     @Test
@@ -162,12 +162,12 @@ class KfsDocumentGenerationServiceTest {
         KfsDocumentGenerationRequest request = createGenerationRequest();
         List<RepaymentScheduleData> scheduleData = createRepaymentScheduleData();
 
-        // Mock the docx4j service to return failure
+        // Mock the DOCX service to return failure
         KfsDocumentGenerationResult expectedResult = new KfsDocumentGenerationResult();
         expectedResult.setStatus("FAILED");
         expectedResult.setMessage("Loan with ID 1 not found");
 
-        when(docx4jGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
+        when(docxGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
 
         // When: Generate KFS document
         KfsDocumentGenerationResult result = kfsDocumentGenerationService.generateKfsDocument(request, scheduleData);
@@ -177,7 +177,7 @@ class KfsDocumentGenerationServiceTest {
         assertEquals("FAILED", result.getStatus());
         assertTrue(result.getMessage().contains("Loan with ID 1 not found"));
 
-        verify(docx4jGenerationService).generateKfsDocument(request);
+        verify(docxGenerationService).generateKfsDocument(request);
     }
 
     @Test
@@ -186,12 +186,12 @@ class KfsDocumentGenerationServiceTest {
         KfsDocumentGenerationRequest request = createGenerationRequest();
         List<RepaymentScheduleData> scheduleData = createRepaymentScheduleData();
 
-        // Mock the docx4j service to return failure
+        // Mock the DOCX service to return failure
         KfsDocumentGenerationResult expectedResult = new KfsDocumentGenerationResult();
         expectedResult.setStatus("FAILED");
         expectedResult.setMessage("Template with ID 1 not found");
 
-        when(docx4jGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
+        when(docxGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
 
         // When: Generate KFS document
         KfsDocumentGenerationResult result = kfsDocumentGenerationService.generateKfsDocument(request, scheduleData);
@@ -201,7 +201,7 @@ class KfsDocumentGenerationServiceTest {
         assertEquals("FAILED", result.getStatus());
         assertTrue(result.getMessage().contains("Template"));
 
-        verify(docx4jGenerationService).generateKfsDocument(request);
+        verify(docxGenerationService).generateKfsDocument(request);
     }
 
     @Test
@@ -235,13 +235,13 @@ class KfsDocumentGenerationServiceTest {
         KfsDocumentGenerationRequest request = createGenerationRequest();
         List<RepaymentScheduleData> emptyScheduleData = new ArrayList<>();
 
-        // Mock the docx4j service response for empty schedule
+        // Mock the DOCX service response for empty schedule
         KfsDocumentGenerationResult expectedResult = new KfsDocumentGenerationResult();
         expectedResult.setStatus("SUCCESS");
         expectedResult.setDocumentId(1L);
         expectedResult.setMessage("KFS document generated successfully");
 
-        when(docx4jGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
+        when(docxGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
 
         // When: Generate KFS document with empty schedule
         KfsDocumentGenerationResult result = kfsDocumentGenerationService.generateKfsDocument(request, emptyScheduleData);
@@ -250,7 +250,7 @@ class KfsDocumentGenerationServiceTest {
         assertNotNull(result);
         assertEquals("SUCCESS", result.getStatus());
 
-        verify(docx4jGenerationService).generateKfsDocument(request);
+        verify(docxGenerationService).generateKfsDocument(request);
     }
 
     @Test
@@ -259,9 +259,8 @@ class KfsDocumentGenerationServiceTest {
         List<Long> loanIds = List.of(1L, 2L, 3L);
         KfsDocumentGenerationRequest baseRequest = createGenerationRequest();
 
-        // Mock the docx4j service to return success for each loan
-
-        when(docx4jGenerationService.generateKfsDocument(any(KfsDocumentGenerationRequest.class))).thenReturn(createSuccessResult(1L))
+        // Mock the DOCX service to return success for each loan
+        when(docxGenerationService.generateKfsDocument(any(KfsDocumentGenerationRequest.class))).thenReturn(createSuccessResult(1L))
                 .thenReturn(createSuccessResult(2L)).thenReturn(createSuccessResult(3L));
 
         // When: Generate documents using bulk method
@@ -280,7 +279,7 @@ class KfsDocumentGenerationServiceTest {
         assertNotNull(results);
         assertEquals(3, results.size());
 
-        verify(docx4jGenerationService, times(3)).generateKfsDocument(any(KfsDocumentGenerationRequest.class));
+        verify(docxGenerationService, times(3)).generateKfsDocument(any(KfsDocumentGenerationRequest.class));
     }
 
     private KfsDocumentGenerationResult createSuccessResult(Long loanId) {
@@ -297,13 +296,13 @@ class KfsDocumentGenerationServiceTest {
         List<RepaymentScheduleData> largeSchedule = createLargeRepaymentSchedule(360);
         KfsDocumentGenerationRequest request = createGenerationRequest();
 
-        // Mock the docx4j service response
+        // Mock the DOCX service response
         KfsDocumentGenerationResult expectedResult = new KfsDocumentGenerationResult();
         expectedResult.setStatus("SUCCESS");
         expectedResult.setDocumentId(1L);
         expectedResult.setMessage("KFS document generated successfully");
 
-        when(docx4jGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
+        when(docxGenerationService.generateKfsDocument(request)).thenReturn(expectedResult);
 
         // When: Generate document with large schedule
         long startTime = System.currentTimeMillis();
@@ -317,7 +316,7 @@ class KfsDocumentGenerationServiceTest {
         assertNotNull(result);
         assertEquals("SUCCESS", result.getStatus());
 
-        verify(docx4jGenerationService).generateKfsDocument(request);
+        verify(docxGenerationService).generateKfsDocument(request);
     }
 
     // Helper methods for test data creation

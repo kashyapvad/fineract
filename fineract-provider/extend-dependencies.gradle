@@ -27,53 +27,28 @@
  * dependencies.gradle can be safely updated from upstream.
  */
 
-dependencies {
-    // =============================================================================
-    // EXTEND MODULE DEPENDENCIES
-    // =============================================================================
+// If docx4j is ever needed, use this configuration to help resolve the JAXB version conflict and classpath issues so that the project can be built without cucumber failures.
+// This is not needed for the project to be built with the current dependencies.
 
-    // docx4j for modern Word document processing with Content Controls
-    implementation 'org.docx4j:docx4j-JAXB-ReferenceImpl:11.5.3'
+// dependencies {
+//     // =============================================================================
+//     // EXTEND MODULE DEPENDENCIES
+//     // =============================================================================
 
-    // JAXB implementation for docx4j support
-    // Core JAXB dependencies are in main dependencies.gradle
-    // docx4j needs additional JAXB runtime implementation for ContextFactory
-    // Using compatible versions: jaxb-runtime 2.3.6 with jaxb-core 2.3.0.1
-    implementation 'org.glassfish.jaxb:jaxb-core:2.3.0.1'
-    implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.6'
+//     // docx4j for modern Word document processing with Content Controls
+//     implementation('org.docx4j:docx4j-JAXB-ReferenceImpl:11.5.3') {
+//         // Exclude the conflicting jakarta.activation implementation
+//         exclude group: 'com.sun.activation', module: 'jakarta.activation'
+//     }
 
-    // =============================================================================
-    // CREDIT BUREAU / KYC DEPENDENCIES
-    // =============================================================================
-    // Add any additional dependencies for credit bureau providers here
-    // Example:
-    // implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-    // implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+//     // Provide the JAXB runtime implementation that docx4j needs
+//     // These are required for docx4j to work properly
+//     implementation('org.glassfish.jaxb:jaxb-runtime:3.0.2') {
+//         // Exclude com.sun.activation to prevent conflicts
+//         exclude group: 'com.sun.activation', module: 'jakarta.activation'
+//     }
 
-    // =============================================================================
-    // EXTEND MODULE TESTING DEPENDENCIES
-    // =============================================================================
-    // Add test-specific dependencies for extend module here
-    // testImplementation 'org.testcontainers:testcontainers:1.19.0'
-}
-
-// =============================================================================
-// BUILD ORDER FIX FOR COMPILATION ISSUES
-// =============================================================================
-
-// Fix for fineract-provider: ensure test compilation runs after main compilation
-tasks.named('compileTestJava').configure {
-    dependsOn tasks.named('compileJava')
-}
-
-// Cross-project fix for fineract-command compilation issues
-// This ensures fineract-command test compilation depends on its main compilation
-// Applied from extend module to avoid upstream changes
-gradle.projectsEvaluated {
-    def commandProject = rootProject.findProject(':fineract-command')
-    if (commandProject) {
-        commandProject.tasks.named('compileTestJava').configure {
-            dependsOn commandProject.tasks.named('compileJava')
-        }
-    }
-}
+//     // Ensure we're using the jakarta.activation-api that's already in the project
+//     // This prevents classpath duplicates while providing the necessary classes
+//     implementation 'jakarta.activation:jakarta.activation-api:2.1.3'
+// }
