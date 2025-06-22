@@ -249,7 +249,7 @@ public class KfsDocumentReadPlatformServiceImpl implements KfsDocumentReadPlatfo
             return statistics;
 
         } catch (Exception e) {
-            log.error("Error generating KFS document statistics: {}", e);
+            log.error("Error generating KFS document statistics", e);
             throw new PlatformDataIntegrityException("error.msg.kfs.document.statistics.error",
                     "Error generating document statistics: " + e.getMessage(), e);
         }

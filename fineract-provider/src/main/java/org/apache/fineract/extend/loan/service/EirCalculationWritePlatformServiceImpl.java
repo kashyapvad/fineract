@@ -70,7 +70,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
             return createEirCalculation(request);
 
         } catch (Exception e) {
-            log.error("Error creating EIR calculation via command: {}", e);
+            log.error("Error creating EIR calculation via command", e);
             throw e;
         }
     }
@@ -92,7 +92,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
             return updateEirCalculation(calculationId, request);
 
         } catch (Exception e) {
-            log.error("Error updating EIR calculation via command: {}", e);
+            log.error("Error updating EIR calculation via command", e);
             throw e;
         }
     }
@@ -111,7 +111,7 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
             return deleteEirCalculation(calculationId);
 
         } catch (Exception e) {
-            log.error("Error deleting EIR calculation via command: {}", e);
+            log.error("Error deleting EIR calculation via command", e);
             throw e;
         }
     }

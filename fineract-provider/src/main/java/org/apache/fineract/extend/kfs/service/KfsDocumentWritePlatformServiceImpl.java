@@ -77,7 +77,7 @@ public class KfsDocumentWritePlatformServiceImpl implements KfsDocumentWritePlat
             return createKfsDocument(request);
 
         } catch (Exception e) {
-            log.error("Error creating KFS document via command: {}", e);
+            log.error("Error creating KFS document via command", e);
             throw e;
         }
     }
@@ -99,7 +99,7 @@ public class KfsDocumentWritePlatformServiceImpl implements KfsDocumentWritePlat
             return updateKfsDocument(documentId, request);
 
         } catch (Exception e) {
-            log.error("Error updating KFS document via command: {}", e);
+            log.error("Error updating KFS document via command", e);
             throw e;
         }
     }
@@ -118,7 +118,7 @@ public class KfsDocumentWritePlatformServiceImpl implements KfsDocumentWritePlat
             return deleteKfsDocument(documentId);
 
         } catch (Exception e) {
-            log.error("Error deleting KFS document via command: {}", e);
+            log.error("Error deleting KFS document via command", e);
             throw e;
         }
     }
@@ -519,7 +519,7 @@ public class KfsDocumentWritePlatformServiceImpl implements KfsDocumentWritePlat
 
     private void handleDataIntegrityIssues(final Exception dve, final String errorCode, final String errorMessage) {
         final Throwable realCause = dve.getCause() != null ? dve.getCause() : dve;
-        log.error("Data integrity issue: {}", dve);
+        log.error("Data integrity issue", dve);
 
         throw new PlatformDataIntegrityException(errorCode, errorMessage, "Data integrity violation: " + realCause.getMessage());
     }

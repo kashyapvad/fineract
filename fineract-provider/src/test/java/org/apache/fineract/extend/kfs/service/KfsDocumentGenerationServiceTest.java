@@ -259,21 +259,7 @@ class KfsDocumentGenerationServiceTest {
         List<Long> loanIds = List.of(1L, 2L, 3L);
         KfsDocumentGenerationRequest baseRequest = createGenerationRequest();
 
-        // Mock responses for each loan
-        KfsDocumentGenerationResponse response1 = new KfsDocumentGenerationResponse();
-        response1.setGenerationStatus("SUCCESS");
-        response1.setLoanId(1L);
-        response1.setSuccess(true);
-
-        KfsDocumentGenerationResponse response2 = new KfsDocumentGenerationResponse();
-        response2.setGenerationStatus("SUCCESS");
-        response2.setLoanId(2L);
-        response2.setSuccess(true);
-
-        KfsDocumentGenerationResponse response3 = new KfsDocumentGenerationResponse();
-        response3.setGenerationStatus("SUCCESS");
-        response3.setLoanId(3L);
-        response3.setSuccess(true);
+        // Mock the docx4j service to return success for each loan
 
         when(docx4jGenerationService.generateKfsDocument(any(KfsDocumentGenerationRequest.class))).thenReturn(createSuccessResult(1L))
                 .thenReturn(createSuccessResult(2L)).thenReturn(createSuccessResult(3L));

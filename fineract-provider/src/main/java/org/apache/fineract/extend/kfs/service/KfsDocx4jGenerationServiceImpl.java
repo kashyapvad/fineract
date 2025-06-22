@@ -153,7 +153,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
 
             log.info("docx4j JAXB contexts initialized successfully");
         } catch (Exception e) {
-            log.error("Failed to initialize docx4j JAXB contexts: {}", e);
+            log.error("Failed to initialize docx4j JAXB contexts", e);
             // Don't throw here - let the service try to work with what's available
         }
     }
@@ -234,14 +234,14 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             return result;
 
         } catch (Exception e) {
-            log.error("Error in generateRbiCompliantDocx: {}", e);
+            log.error("Error in generateRbiCompliantDocx", e);
 
             // Try a fallback approach with minimal document
             try {
                 log.info("Attempting fallback document generation...");
                 return createFallbackDocument(documentData);
             } catch (Exception fallbackError) {
-                log.error("Fallback document generation also failed: {}", fallbackError);
+                log.error("Fallback document generation also failed", fallbackError);
                 throw new RuntimeException("Both primary and fallback document generation failed", fallbackError);
             }
         }
@@ -308,7 +308,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             return wordPackage;
 
         } catch (Exception e) {
-            log.error("Failed to create WordprocessingMLPackage: {}", e);
+            log.error("Failed to create WordprocessingMLPackage", e);
             throw new RuntimeException("Failed to initialize Word document package", e);
         }
     }
@@ -342,7 +342,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             log.debug("All required JAXB contexts are properly initialized");
 
         } catch (Exception e) {
-            log.error("Failed to initialize JAXB contexts: {}", e);
+            log.error("Failed to initialize JAXB contexts", e);
             throw new RuntimeException("Critical JAXB context initialization failed", e);
         }
     }
@@ -1079,7 +1079,7 @@ public class KfsDocx4jGenerationServiceImpl implements KfsDocx4jGenerationServic
             return result;
 
         } catch (Exception e) {
-            log.error("Failed to convert WordprocessingMLPackage to byte array: {}", e);
+            log.error("Failed to convert WordprocessingMLPackage to byte array", e);
 
             // More detailed error analysis
             if (e.getMessage() != null) {
