@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -83,8 +84,8 @@ public class EIRCalculationServiceImpl implements EIRCalculationService {
             EIRCalculationResult result = EIRCalculationResult.builder().effectiveInterestRate(effectiveInterestRate)
                     .principalAmount(loan.getPrincipal().getAmount()).netDisbursementAmount(netDisbursementAmount)
                     .chargesDueAtDisbursement(chargesDueAtDisbursement).emiAmount(emiAmount).tenureInMonths(tenureInMonths)
-                    .numberOfInstallments(numberOfInstallments).calculationDate(LocalDate.now()).currencyCode(loan.getCurrencyCode())
-                    .formulaUsed(dynamicFormulaDescription).build();
+                    .numberOfInstallments(numberOfInstallments).calculationDate(LocalDate.now(ZoneId.systemDefault()))
+                    .currencyCode(loan.getCurrencyCode()).formulaUsed(dynamicFormulaDescription).build();
 
             log.info("EIR calculation completed for loan ID: {}, EIR: {}%", loan.getId(), effectiveInterestRate);
             return result;

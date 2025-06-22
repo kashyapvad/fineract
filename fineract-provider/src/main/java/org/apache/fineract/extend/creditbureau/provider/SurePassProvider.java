@@ -21,11 +21,14 @@ package org.apache.fineract.extend.creditbureau.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Splitter;
 import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -121,7 +124,7 @@ public class SurePassProvider implements CreditBureauProvider {
         log.info("Pulling customer data via SurePass for client {} - document type: {}", request.getClientId(), request.getDocumentType());
 
         try {
-            String documentType = StringUtils.trimToEmpty(request.getDocumentType()).toUpperCase();
+            String documentType = StringUtils.trimToEmpty(request.getDocumentType()).toUpperCase(Locale.ROOT);
 
             switch (documentType) {
                 case "AADHAAR":
@@ -336,17 +339,17 @@ public class SurePassProvider implements CreditBureauProvider {
         }
 
         // Step 1: Trim whitespace and convert to uppercase
-        String normalized = StringUtils.trimToEmpty(gender).toUpperCase();
+        String normalized = StringUtils.trimToEmpty(gender).toUpperCase(Locale.ROOT);
 
         // Step 2: Handle all possible male variations
         if (normalized.equals("M") || normalized.equals("MALE") || normalized.equals("MAN")
-                || normalized.startsWith("M") && normalized.length() <= 4) { // Handle typos like "MAL"
+                || (normalized.startsWith("M") && normalized.length() <= 4)) { // Handle typos like "MAL"
             return "MALE";
         }
 
         // Step 3: Handle all possible female variations
         if (normalized.equals("F") || normalized.equals("FEMALE") || normalized.equals("WOMAN") || normalized.equals("WOMEN")
-                || normalized.startsWith("F") && normalized.length() <= 6) { // Handle typos like "FEMAL"
+                || (normalized.startsWith("F") && normalized.length() <= 6)) { // Handle typos like "FEMAL"
             return "FEMALE";
         }
 
@@ -406,8 +409,8 @@ public class SurePassProvider implements CreditBureauProvider {
         normalizedPanName = normalizedPanName.replaceAll("\\s{2,}", " ");
 
         // Step 3: Convert to uppercase for comparison
-        normalizedClientName = normalizedClientName.toUpperCase();
-        normalizedPanName = normalizedPanName.toUpperCase();
+        normalizedClientName = normalizedClientName.toUpperCase(Locale.ROOT);
+        normalizedPanName = normalizedPanName.toUpperCase(Locale.ROOT);
 
         // Step 4: Direct match (exact comparison)
         if (normalizedClientName.equals(normalizedPanName)) {
@@ -415,11 +418,11 @@ public class SurePassProvider implements CreditBureauProvider {
         }
 
         // Step 5: Word-by-word comparison with 100% match requirement (order can be different)
-        String[] clientNameParts = normalizedClientName.split("\\s+");
-        String[] panNameParts = normalizedPanName.split("\\s+");
+        java.util.List<String> clientNameParts = Splitter.on(Pattern.compile("\\s+")).splitToList(normalizedClientName);
+        java.util.List<String> panNameParts = Splitter.on(Pattern.compile("\\s+")).splitToList(normalizedPanName);
 
         // Both names must have the same number of words for 100% match
-        if (clientNameParts.length != panNameParts.length) {
+        if (clientNameParts.size() != panNameParts.size()) {
             return false;
         }
 
@@ -518,9 +521,10 @@ public class SurePassProvider implements CreditBureauProvider {
 
             // Create user-friendly error message
             String userFriendlyMessage;
-            if (message.toLowerCase().contains("invalid pan") || message.toLowerCase().contains("pan")) {
+            if (message.toLowerCase(Locale.ROOT).contains("invalid pan") || message.toLowerCase(Locale.ROOT).contains("pan")) {
                 userFriendlyMessage = "Invalid PAN number format or PAN not found in government records";
-            } else if (message.toLowerCase().contains("invalid aadhaar") || message.toLowerCase().contains("aadhaar")) {
+            } else if (message.toLowerCase(Locale.ROOT).contains("invalid aadhaar")
+                    || message.toLowerCase(Locale.ROOT).contains("aadhaar")) {
                 userFriendlyMessage = "Invalid Aadhaar number format or Aadhaar not found in government records";
             } else {
                 userFriendlyMessage = "Invalid document data: " + message;

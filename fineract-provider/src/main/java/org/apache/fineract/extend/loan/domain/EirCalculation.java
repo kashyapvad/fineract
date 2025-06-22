@@ -23,6 +23,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -116,7 +117,7 @@ public class EirCalculation extends AbstractAuditableWithUTCDateTimeCustom<Long>
      * Static factory method for creating EIR calculation with default values
      */
     public static EirCalculation createDefault(Long loanId, BigDecimal effectiveInterestRate, BigDecimal principalAmount) {
-        return EirCalculation.builder().loanId(loanId).calculationDate(LocalDate.now()).effectiveInterestRate(effectiveInterestRate)
-                .principalAmount(principalAmount).calculationMethod("IRR_METHOD").build();
+        return EirCalculation.builder().loanId(loanId).calculationDate(LocalDate.now(ZoneId.systemDefault()))
+                .effectiveInterestRate(effectiveInterestRate).principalAmount(principalAmount).calculationMethod("IRR_METHOD").build();
     }
 }

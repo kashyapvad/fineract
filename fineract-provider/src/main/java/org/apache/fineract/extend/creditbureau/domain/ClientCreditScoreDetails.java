@@ -29,6 +29,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -127,7 +128,7 @@ public class ClientCreditScoreDetails extends AbstractAuditableWithUTCDateTimeCu
         JsonNode scoringElements = scoreDetailsNode.path("scoringElements");
 
         return new ClientCreditScoreDetails().setCreditReport(creditReport).setScoreModel(scoreType).setScoreVersion(scoreVersion)
-                .setScoreName(scoreName).setCreditScore(scoreValue).setScoreDate(LocalDate.now())
+                .setScoreName(scoreName).setCreditScore(scoreValue).setScoreDate(LocalDate.now(ZoneId.systemDefault()))
                 .setScoringElements(scoringElements.isArray() ? scoringElements : null);
     }
 

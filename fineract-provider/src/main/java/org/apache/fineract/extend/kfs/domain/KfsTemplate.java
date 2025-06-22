@@ -115,10 +115,12 @@ public class KfsTemplate extends AbstractAuditableWithUTCDateTimeCustom<Long> {
     }
 
     // Getters and Setters
+    @Override
     public Long getId() {
         return id;
     }
 
+    @Override
     public void setId(Long id) {
         this.id = id;
     }
@@ -252,7 +254,7 @@ public class KfsTemplate extends AbstractAuditableWithUTCDateTimeCustom<Long> {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof KfsTemplate)) {
             return false;
         }
         KfsTemplate that = (KfsTemplate) o;

@@ -145,7 +145,8 @@ public class KfsDocumentGenerationRequestValidator {
         if (request.getPrincipalAmount() != null && request.getNetDisbursementAmount() != null
                 && request.getChargesDueAtDisbursement() != null) {
 
-            if (!request.getPrincipalAmount().equals(request.getNetDisbursementAmount().add(request.getChargesDueAtDisbursement()))) {
+            if (request.getPrincipalAmount()
+                    .compareTo(request.getNetDisbursementAmount().add(request.getChargesDueAtDisbursement())) != 0) {
                 baseDataValidator.reset().parameter("principalAmount").failWithCode("principal.amount.mismatch",
                         "Principal amount should equal net disbursement amount plus charges");
             }

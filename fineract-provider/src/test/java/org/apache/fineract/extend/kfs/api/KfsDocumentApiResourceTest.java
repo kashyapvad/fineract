@@ -18,8 +18,10 @@
  */
 package org.apache.fineract.extend.kfs.api;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.when;
 
 import org.apache.fineract.extend.kfs.dto.KfsDocumentRequest;
 import org.apache.fineract.extend.kfs.dto.KfsDocumentResponse;
@@ -109,27 +111,21 @@ class KfsDocumentApiResourceTest {
     // Helper methods for test data
     private KfsDocumentRequest createTestRequest() {
         // Stub implementation - coder will create proper DTO
-        return new KfsDocumentRequest() {
-
-            {
-                setLoanId(1L);
-                setClientId(1L);
-                setKfsTemplateId(1L);
-                setDocumentReferenceNumber("KFS-2024-001");
-            }
-        };
+        KfsDocumentRequest request = new KfsDocumentRequest();
+        request.setLoanId(1L);
+        request.setClientId(1L);
+        request.setKfsTemplateId(1L);
+        request.setDocumentReferenceNumber("KFS-2024-001");
+        return request;
     }
 
     private KfsDocumentResponse createTestResponse() {
         // Stub implementation - coder will create proper DTO
-        return new KfsDocumentResponse() {
-
-            {
-                setDocumentId(1L);
-                setDocumentReferenceNumber("KFS-2024-001");
-                setLoanId(1L);
-                setDocumentStatus("GENERATED");
-            }
-        };
+        KfsDocumentResponse response = new KfsDocumentResponse();
+        response.setDocumentId(1L);
+        response.setDocumentReferenceNumber("KFS-2024-001");
+        response.setLoanId(1L);
+        response.setDocumentStatus("GENERATED");
+        return response;
     }
 }

@@ -20,6 +20,7 @@ package org.apache.fineract.extend.loan.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.extend.loan.domain.EirCalculation;
@@ -226,7 +227,8 @@ public class EirCalculationWritePlatformServiceImpl implements EirCalculationWri
             }
 
             // Create EIR calculation entity using calculated results
-            EirCalculation calculation = EirCalculation.builder().loanId(request.getLoanId()).calculationDate(LocalDate.now())
+            EirCalculation calculation = EirCalculation.builder().loanId(request.getLoanId())
+                    .calculationDate(LocalDate.now(ZoneId.systemDefault()))
                     .effectiveInterestRate(calculationResult.getEffectiveInterestRate())
                     .principalAmount(calculationResult.getPrincipalAmount())
                     .netDisbursementAmount(calculationResult.getNetDisbursementAmount())

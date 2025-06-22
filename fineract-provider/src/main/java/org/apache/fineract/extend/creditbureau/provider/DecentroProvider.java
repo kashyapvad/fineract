@@ -21,6 +21,7 @@ package org.apache.fineract.extend.creditbureau.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -327,7 +328,7 @@ public class DecentroProvider implements CreditBureauProvider {
      */
     private CreditScoreProviderResponse mapCreditScoreResponse(String referenceId, JsonNode response) {
         boolean success = "success_credit_score".equals(getResponseCode(response));
-        boolean scoreFound = !("error_credits_score_not_found".equals(getResponseCode(response)));
+        boolean scoreFound = !"error_credits_score_not_found".equals(getResponseCode(response));
 
         return CreditScoreProviderResponse.builder().referenceId(referenceId).success(success).responseCode(getResponseCode(response))
                 .message(getResponseMessage(response)).creditScore(extractCreditScore(response)).creditRating(extractCreditRating(response))
@@ -346,7 +347,7 @@ public class DecentroProvider implements CreditBureauProvider {
             boolean verified = extractDetailedVerificationResult(response.get("data"), documentType);
 
             // Normalize document type: trim whitespace and convert to uppercase for comparison
-            final String normalizedDocumentType = StringUtils.trimToEmpty(documentType).toUpperCase();
+            final String normalizedDocumentType = StringUtils.trimToEmpty(documentType).toUpperCase(Locale.ROOT);
 
             switch (normalizedDocumentType) {
                 case "PAN": {

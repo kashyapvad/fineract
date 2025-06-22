@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.extend.kfs.service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -138,7 +139,7 @@ public class KfsDocumentGenerationServiceImpl implements KfsDocumentGenerationSe
             response.setFileContent(java.util.Base64.getEncoder().encodeToString(result.getDocumentContent()));
 
             // Detect output format for frontend
-            String content = new String(result.getDocumentContent());
+            String content = new String(result.getDocumentContent(), StandardCharsets.UTF_8);
             if (content.startsWith("{\\rtf")) {
                 response.setOutputFormat("RTF");
                 response.setErrorMessage(result.getMessage() + " (Generated as RTF due to DOCX processing issues)");

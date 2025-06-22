@@ -18,8 +18,10 @@
  */
 package org.apache.fineract.extend.loan.api;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -200,31 +202,25 @@ class EirCalculationApiResourceTest {
     // Helper methods for test data - coder will implement actual DTOs
     private EirCalculationRequest createTestRequest() {
         // Stub implementation - coder will create proper DTO
-        return new EirCalculationRequest() {
-
-            {
-                setLoanId(1L);
-                setCalculationDate(LocalDate.of(2024, 12, 19));
-                setEffectiveInterestRate(new BigDecimal("15.50"));
-                setPrincipalAmount(new BigDecimal("100000.00"));
-                setCalculationMethod("IRR_METHOD");
-            }
-        };
+        EirCalculationRequest request = new EirCalculationRequest();
+        request.setLoanId(1L);
+        request.setCalculationDate(LocalDate.of(2024, 12, 19));
+        request.setEffectiveInterestRate(new BigDecimal("15.50"));
+        request.setPrincipalAmount(new BigDecimal("100000.00"));
+        request.setCalculationMethod("IRR_METHOD");
+        return request;
     }
 
     private EirCalculationResponse createTestResponse() {
         // Stub implementation - coder will create proper DTO
-        return new EirCalculationResponse() {
-
-            {
-                setCalculationId(1L);
-                setLoanId(1L);
-                setCalculationDate(LocalDate.of(2024, 12, 19));
-                setEffectiveInterestRate(new BigDecimal("15.50"));
-                setPrincipalAmount(new BigDecimal("100000.00"));
-                setCalculationMethod("IRR_METHOD");
-                setCalculationStatus("COMPLETED");
-            }
-        };
+        EirCalculationResponse response = new EirCalculationResponse();
+        response.setCalculationId(1L);
+        response.setLoanId(1L);
+        response.setCalculationDate(LocalDate.of(2024, 12, 19));
+        response.setEffectiveInterestRate(new BigDecimal("15.50"));
+        response.setPrincipalAmount(new BigDecimal("100000.00"));
+        response.setCalculationMethod("IRR_METHOD");
+        response.setCalculationStatus("COMPLETED");
+        return response;
     }
 }
