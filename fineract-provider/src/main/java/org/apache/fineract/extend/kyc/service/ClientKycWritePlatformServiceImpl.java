@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.extend.common.dto.CustomerDataProviderRequest;
 import org.apache.fineract.extend.common.dto.CustomerDataProviderResponse;
 import org.apache.fineract.extend.common.service.ExtendProviderService;
+import org.apache.fineract.extend.creditbureau.provider.SurePassProvider;
 import org.apache.fineract.extend.kyc.domain.ClientKycDetails;
 import org.apache.fineract.extend.kyc.domain.ClientKycDetailsRepositoryWrapper;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -37,6 +38,7 @@ import org.apache.fineract.infrastructure.security.service.PlatformSecurityConte
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +59,10 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
 
     // Common provider service for external credit bureau integrations
     private final ExtendProviderService extendProviderService;
+
+    // SurePass provider for OTP verification (optional dependency)
+    @Autowired(required = false)
+    private SurePassProvider surePassProvider;
 
     // All KYC operations now use dedicated entity tables instead of data tables
     // This provides better performance, querying capabilities, and type safety
@@ -543,6 +549,152 @@ public class ClientKycWritePlatformServiceImpl implements ClientKycWritePlatform
         } catch (Exception e) {
             log.error("Error processing KYC details deletion command", e);
             throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public CommandProcessingResult generateOtpForAadhaarVerification(final JsonCommand command) {
+        log.info("=== STARTING OTP GENERATION FOR AADHAAR VERIFICATION ===");
+        log.info("Command ID: {}", command.commandId());
+        log.info("Client ID: {}", command.getClientId());
+
+        try {
+            // Extract client ID from command
+            final Long clientId = command.getClientId();
+            log.info("Processing OTP generation for client: {}", clientId);
+
+            // Validate client exists
+            this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+
+            // Find existing KYC record
+            final ClientKycDetails kycDetails = this.kycRepositoryWrapper.findByClientIdThrowExceptionIfNotFound(clientId);
+
+            // Get Aadhaar number from command or existing KYC record
+            String aadhaarNumber = command.stringValueOfParameterNamed("aadhaarNumber");
+            if (StringUtils.isBlank(aadhaarNumber)) {
+                aadhaarNumber = kycDetails.getAadhaarNumber();
+            }
+
+            if (StringUtils.isBlank(aadhaarNumber)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.client.kyc.aadhaar.required",
+                        "Aadhaar number is required for OTP generation. Please provide Aadhaar number or update KYC details first.");
+            }
+
+            // Make API call to generate OTP
+            final String otpClientId = generateOtpApiCall(aadhaarNumber);
+
+            // Store OTP client ID and timestamp
+            kycDetails.markOtpGenerated(otpClientId);
+            this.kycRepositoryWrapper.save(kycDetails);
+
+            log.info("Successfully generated OTP for client {} with client ID: {}", clientId, otpClientId);
+
+            return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(kycDetails.getId())
+                    .withClientId(clientId).build();
+
+        } catch (Exception e) {
+            log.error("Error during OTP generation", e);
+            throw new RuntimeException("OTP generation failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public CommandProcessingResult submitOtpForAadhaarVerification(final JsonCommand command) {
+        log.info("=== STARTING OTP VERIFICATION FOR AADHAAR ===");
+        log.info("Command ID: {}", command.commandId());
+        log.info("Client ID: {}", command.getClientId());
+
+        try {
+            // Extract client ID from command
+            final Long clientId = command.getClientId();
+            log.info("Processing OTP verification for client: {}", clientId);
+
+            // Validate client exists
+            this.clientRepositoryWrapper.findOneWithNotFoundDetection(clientId);
+            final AppUser currentUser = this.context.authenticatedUser();
+
+            // Find existing KYC record
+            final ClientKycDetails kycDetails = this.kycRepositoryWrapper.findByClientIdThrowExceptionIfNotFound(clientId);
+
+            // Validate OTP was generated
+            if (StringUtils.isBlank(kycDetails.getOtpClientId())) {
+                throw new GeneralPlatformDomainRuleException("error.msg.client.kyc.otp.not.generated",
+                        "OTP was not generated for this client. Please generate OTP first.");
+            }
+
+            // Get OTP from command
+            final String otp = command.stringValueOfParameterNamed("otp");
+            if (StringUtils.isBlank(otp)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.client.kyc.otp.required", "OTP is required for verification.");
+            }
+
+            final String notes = command.stringValueOfParameterNamed("notes");
+
+            // Make API call to verify OTP
+            final boolean verificationResult = verifyOtpApiCall(kycDetails.getOtpClientId(), otp);
+
+            if (verificationResult) {
+                // Mark OTP verification as completed
+                kycDetails.markOtpVerificationCompleted(currentUser, notes);
+                this.kycRepositoryWrapper.save(kycDetails);
+
+                log.info("Successfully verified OTP for client {}", clientId);
+
+                return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(kycDetails.getId())
+                        .withClientId(clientId).build();
+            } else {
+                throw new GeneralPlatformDomainRuleException("error.msg.client.kyc.otp.invalid", "Invalid OTP provided.");
+            }
+
+        } catch (Exception e) {
+            log.error("Error during OTP verification", e);
+            throw new RuntimeException("OTP verification failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Makes API call to generate OTP for Aadhaar verification
+     *
+     * @param aadhaarNumber
+     *            the Aadhaar number
+     * @return OTP client ID from provider
+     */
+    private String generateOtpApiCall(String aadhaarNumber) {
+        if (surePassProvider != null && surePassProvider.isAvailable()) {
+            try {
+                log.info("Generating OTP via SurePass for Aadhaar: {}", aadhaarNumber);
+                return surePassProvider.generateOtpForAadhaar(aadhaarNumber);
+            } catch (Exception e) {
+                log.error("SurePass OTP generation failed: {}", e.getMessage());
+                throw new RuntimeException("OTP generation failed: " + e.getMessage(), e);
+            }
+        } else {
+            throw new RuntimeException("SurePass provider is not available. Please configure the provider or check service availability.");
+        }
+    }
+
+    /**
+     * Makes API call to verify OTP
+     *
+     * @param otpClientId
+     *            the client ID from OTP generation
+     * @param otp
+     *            the OTP to verify
+     * @return true if verification successful
+     */
+    private boolean verifyOtpApiCall(String otpClientId, String otp) {
+        if (surePassProvider != null && surePassProvider.isAvailable()) {
+            try {
+                log.info("Verifying OTP via SurePass for client ID: {}, OTP: {}", otpClientId, otp);
+                return surePassProvider.submitOtpForAadhaar(otpClientId, otp);
+            } catch (Exception e) {
+                log.error("SurePass OTP verification failed: {}", e.getMessage());
+                return false;
+            }
+        } else {
+            throw new RuntimeException("SurePass provider is not available. Please configure the provider or check service availability.");
         }
     }
 }

@@ -26,6 +26,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import org.apache.fineract.extend.kyc.data.GuarantorKycData;
+import org.apache.fineract.extend.kyc.service.GuarantorKycReadPlatformService;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -57,14 +59,17 @@ public class GuarantorReadPlatformServiceImpl implements GuarantorReadPlatformSe
     private final ClientReadPlatformService clientReadPlatformService;
     private final StaffReadPlatformService staffReadPlatformService;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
+    private final GuarantorKycReadPlatformService guarantorKycReadPlatformService;
 
     @Autowired
     public GuarantorReadPlatformServiceImpl(final JdbcTemplate jdbcTemplate, final ClientReadPlatformService clientReadPlatformService,
-            final StaffReadPlatformService staffReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper) {
+            final StaffReadPlatformService staffReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
+            final GuarantorKycReadPlatformService guarantorKycReadPlatformService) {
         this.jdbcTemplate = jdbcTemplate;
         this.clientReadPlatformService = clientReadPlatformService;
         this.staffReadPlatformService = staffReadPlatformService;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
+        this.guarantorKycReadPlatformService = guarantorKycReadPlatformService;
     }
 
     @Override
@@ -90,7 +95,7 @@ public class GuarantorReadPlatformServiceImpl implements GuarantorReadPlatformSe
         final List<GuarantorData> mergedGuarantorDatas = new ArrayList<>();
 
         for (final GuarantorData guarantorData : guarantorDatas) {
-            mergedGuarantorDatas.add(mergeDetailsForClientOrStaffGuarantor(guarantorData));
+            mergedGuarantorDatas.add(mergeDetailsForClientStaffOrGuarantorKyc(guarantorData));
         }
         return mergedGuarantorDatas;
     }
@@ -110,7 +115,7 @@ public class GuarantorReadPlatformServiceImpl implements GuarantorReadPlatformSe
             return preparedStatement;
         }, rm).get(0);
 
-        return mergeDetailsForClientOrStaffGuarantor(guarantorData);
+        return mergeDetailsForClientStaffOrGuarantorKyc(guarantorData);
     }
 
     private static final class GuarantorMapper implements RowMapper<GuarantorData> {
@@ -119,7 +124,7 @@ public class GuarantorReadPlatformServiceImpl implements GuarantorReadPlatformSe
         private GuarantorFundingMapper guarantorFundingMapper = new GuarantorFundingMapper(guarantorTransactionMapper);
 
         private final StringBuilder sqlBuilder = new StringBuilder(
-                " g.id as id, g.loan_id as loanId, g.client_reln_cv_id clientRelationshipTypeId, g.entity_id as entityId, g.type_enum guarantorType ,g.firstname as firstname, g.lastname as lastname, g.dob as dateOfBirth, g.address_line_1 as addressLine1, g.address_line_2 as addressLine2, g.city as city, g.state as state, g.country as country, g.zip as zip, g.house_phone_number as housePhoneNumber, g.mobile_number as mobilePhoneNumber, g.comment as comment, ")
+                " g.id as id, g.loan_id as loanId, g.client_reln_cv_id clientRelationshipTypeId, g.entity_id as entityId, g.type_enum guarantorType, g.extend_guarantor_kyc_id as extendGuarantorKycId, g.firstname as firstname, g.lastname as lastname, g.dob as dateOfBirth, g.address_line_1 as addressLine1, g.address_line_2 as addressLine2, g.city as city, g.state as state, g.country as country, g.zip as zip, g.house_phone_number as housePhoneNumber, g.mobile_number as mobilePhoneNumber, g.comment as comment, ")
                 .append(" g.is_active as guarantorStatus,")//
                 .append(" cv.code_value as typeName, ")//
                 .append("gfd.amount,")//
@@ -153,6 +158,11 @@ public class GuarantorReadPlatformServiceImpl implements GuarantorReadPlatformSe
             final Integer guarantorTypeId = rs.getInt("guarantorType");
             final EnumOptionData guarantorType = GuarantorEnumerations.guarantorType(guarantorTypeId);
             final Long entityId = rs.getLong("entityId");
+            final Long extendGuarantorKycId = JdbcSupport.getLong(rs, "extendGuarantorKycId");
+
+            // For GUARANTOR_KYC type, use extendGuarantorKycId as the effective entityId for data merging
+            final Long effectiveEntityId = (guarantorTypeId == 4 && extendGuarantorKycId != null) ? extendGuarantorKycId : entityId;
+
             final String firstname = rs.getString("firstname");
             final String lastname = rs.getString("lastname");
             final LocalDate dob = JdbcSupport.getLocalDate(rs, "dateOfBirth");
@@ -185,9 +195,9 @@ public class GuarantorReadPlatformServiceImpl implements GuarantorReadPlatformSe
                 }
             }
 
-            return new GuarantorData(id, loanId, clientRelationshipType, entityId, guarantorType, firstname, lastname, dob, addressLine1,
-                    addressLine2, city, state, zip, country, mobileNumber, housePhoneNumber, comment, null, null, null, status,
-                    guarantorFundingDetails, null, null, accountLinkingOptions);
+            return new GuarantorData(id, loanId, clientRelationshipType, effectiveEntityId, guarantorType, firstname, lastname, dob,
+                    addressLine1, addressLine2, city, state, zip, country, mobileNumber, housePhoneNumber, comment, null, null, null,
+                    status, guarantorFundingDetails, null, null, accountLinkingOptions);
         }
     }
 
@@ -287,13 +297,18 @@ public class GuarantorReadPlatformServiceImpl implements GuarantorReadPlatformSe
     /**
      * @param guarantorData
      */
-    private GuarantorData mergeDetailsForClientOrStaffGuarantor(final GuarantorData guarantorData) {
+    private GuarantorData mergeDetailsForClientStaffOrGuarantorKyc(final GuarantorData guarantorData) {
         if (guarantorData.isExistingClient()) {
             final ClientData clientData = this.clientReadPlatformService.retrieveOne(guarantorData.getEntityId());
             return GuarantorData.mergeClientData(clientData, guarantorData);
         } else if (guarantorData.isStaffMember()) {
             final StaffData staffData = this.staffReadPlatformService.retrieveStaff(guarantorData.getEntityId());
             return GuarantorData.mergeStaffData(staffData, guarantorData);
+        } else if (guarantorData.isExistingGuarantorKyc()) {
+            // For GUARANTOR_KYC type, entityId contains the guarantor KYC ID (mapped as effectiveEntityId)
+            final GuarantorKycData guarantorKycData = this.guarantorKycReadPlatformService
+                    .retrieveGuarantorKycDetails(guarantorData.getEntityId());
+            return GuarantorData.mergeGuarantorKycData(guarantorKycData, guarantorData);
         }
         return guarantorData;
     }

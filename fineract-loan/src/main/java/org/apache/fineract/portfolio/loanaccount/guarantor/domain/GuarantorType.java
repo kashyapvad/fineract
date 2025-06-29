@@ -25,7 +25,8 @@ public enum GuarantorType {
 
     CUSTOMER(1, "guarantor.existing.customer"), //
     STAFF(2, "guarantor.staff"), //
-    EXTERNAL(3, "guarantor.external"); //
+    EXTERNAL(3, "guarantor.external"), //
+    GUARANTOR_KYC(4, "guarantor.existing.kyc"); //
 
     private final Integer value;
     private final String code;
@@ -88,6 +89,10 @@ public enum GuarantorType {
 
     public boolean isStaff() {
         return this.value.equals(GuarantorType.STAFF.getValue());
+    }
+
+    public boolean isGuarantorKyc() {
+        return this.value.equals(GuarantorType.GUARANTOR_KYC.getValue());
     }
 
 }

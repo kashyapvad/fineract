@@ -84,6 +84,15 @@ public class SurePassProvider implements CreditBureauProvider {
     @Value("${credit.bureau.surepass.pan-endpoint}")
     private String surePassPanEndpoint;
 
+    @Value("${credit.bureau.surepass.otp-base-url}")
+    private String surePassOtpBaseUrl;
+
+    @Value("${credit.bureau.surepass.aadhaar-otp-generate-endpoint}")
+    private String surePassAadhaarOtpGenerateEndpoint;
+
+    @Value("${credit.bureau.surepass.aadhaar-otp-submit-endpoint}")
+    private String surePassAadhaarOtpSubmitEndpoint;
+
     @PostConstruct
     private void init() {
         log.info("SurePassProvider initialized successfully");
@@ -139,7 +148,7 @@ public class SurePassProvider implements CreditBureauProvider {
 
         } catch (Exception e) {
             if (e instanceof ProviderException) {
-                throw e;
+                throw (ProviderException) e;
             }
             throw new ProviderException(getProviderName(), "CUSTOMER_DATA_FAILED", "Failed to pull customer data: " + e.getMessage(), e,
                     isRetryableError(e));
@@ -624,6 +633,15 @@ public class SurePassProvider implements CreditBureauProvider {
         if (StringUtils.isBlank(surePassPanEndpoint)) {
             throw new ProviderConfigurationException("SurePass PAN endpoint is not configured");
         }
+        if (StringUtils.isBlank(surePassOtpBaseUrl)) {
+            throw new ProviderConfigurationException("SurePass OTP base URL is not configured");
+        }
+        if (StringUtils.isBlank(surePassAadhaarOtpGenerateEndpoint)) {
+            throw new ProviderConfigurationException("SurePass Aadhaar OTP generate endpoint is not configured");
+        }
+        if (StringUtils.isBlank(surePassAadhaarOtpSubmitEndpoint)) {
+            throw new ProviderConfigurationException("SurePass Aadhaar OTP submit endpoint is not configured");
+        }
     }
 
     @Override
@@ -657,5 +675,100 @@ public class SurePassProvider implements CreditBureauProvider {
             return clientError.getStatusCode().value() == 429;
         }
         return false;
+    }
+
+    /**
+     * Generate OTP for Aadhaar verification via SurePass API
+     *
+     * @param aadhaarNumber
+     *            the Aadhaar number to generate OTP for
+     * @return OTP client ID from SurePass
+     * @throws ProviderException
+     *             if OTP generation fails
+     */
+    public String generateOtpForAadhaar(String aadhaarNumber) throws ProviderException {
+        log.info("Generating OTP for Aadhaar verification via SurePass");
+
+        try {
+            // Build SurePass OTP generation request
+            Map<String, Object> surePassRequest = new HashMap<>();
+            surePassRequest.put("id_number", aadhaarNumber);
+
+            // Make API call
+            String endpoint = surePassOtpBaseUrl + surePassAadhaarOtpGenerateEndpoint;
+            JsonNode response = makeSurePassApiCall(endpoint, surePassRequest);
+
+            // Parse response
+            boolean success = response.path("success").asBoolean(false);
+            int statusCode = response.path("status_code").asInt(500);
+            String message = response.path("message").asText("");
+
+            if (success && statusCode == 200) {
+                // Extract client_id from response
+                String clientId = response.path("data").path("client_id").asText("");
+                if (StringUtils.isNotBlank(clientId)) {
+                    log.info("Successfully generated OTP for Aadhaar, client_id: {}", clientId);
+                    return clientId;
+                } else {
+                    throw new ProviderException(getProviderName(), "OTP_GENERATION_FAILED", "OTP generated but no client_id returned",
+                            false);
+                }
+            } else {
+                throw new ProviderException(getProviderName(), "OTP_GENERATION_FAILED", "OTP generation failed: " + message, false);
+            }
+
+        } catch (Exception e) {
+            if (e instanceof ProviderException) {
+                throw (ProviderException) e;
+            }
+            throw new ProviderException(getProviderName(), "OTP_GENERATION_ERROR", "Error generating OTP: " + e.getMessage(), e,
+                    isRetryableError(e));
+        }
+    }
+
+    /**
+     * Submit OTP for Aadhaar verification via SurePass API
+     *
+     * @param clientId
+     *            the client ID from OTP generation
+     * @param otp
+     *            the OTP code to verify
+     * @return true if OTP verification successful
+     * @throws ProviderException
+     *             if OTP verification fails
+     */
+    public boolean submitOtpForAadhaar(String clientId, String otp) throws ProviderException {
+        log.info("Submitting OTP for Aadhaar verification via SurePass, client_id: {}", clientId);
+
+        try {
+            // Build SurePass OTP submission request
+            Map<String, Object> surePassRequest = new HashMap<>();
+            surePassRequest.put("client_id", clientId);
+            surePassRequest.put("otp", otp);
+
+            // Make API call
+            String endpoint = surePassOtpBaseUrl + surePassAadhaarOtpSubmitEndpoint;
+            JsonNode response = makeSurePassApiCall(endpoint, surePassRequest);
+
+            // Parse response
+            boolean success = response.path("success").asBoolean(false);
+            int statusCode = response.path("status_code").asInt(500);
+            String message = response.path("message").asText("");
+
+            if (success && statusCode == 200) {
+                log.info("Successfully verified OTP for Aadhaar, client_id: {}", clientId);
+                return true;
+            } else {
+                log.warn("OTP verification failed for client_id: {}, message: {}", clientId, message);
+                return false;
+            }
+
+        } catch (Exception e) {
+            if (e instanceof ProviderException) {
+                throw (ProviderException) e;
+            }
+            throw new ProviderException(getProviderName(), "OTP_VERIFICATION_ERROR", "Error verifying OTP: " + e.getMessage(), e,
+                    isRetryableError(e));
+        }
     }
 }

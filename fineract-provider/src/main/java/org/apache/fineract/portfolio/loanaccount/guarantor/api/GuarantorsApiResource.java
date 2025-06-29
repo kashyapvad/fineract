@@ -42,6 +42,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
+import org.apache.fineract.extend.kyc.data.GuarantorKycData;
+import org.apache.fineract.extend.kyc.service.GuarantorKycReadPlatformService;
 import org.apache.fineract.infrastructure.bulkimport.data.GlobalEntityType;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookPopulatorService;
 import org.apache.fineract.infrastructure.bulkimport.service.BulkImportWorkbookService;
@@ -80,6 +82,7 @@ public class GuarantorsApiResource {
     private final GuarantorReadPlatformService guarantorReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final DefaultToApiJsonSerializer<GuarantorData> apiJsonSerializerService;
+    private final DefaultToApiJsonSerializer<GuarantorKycData> guarantorKycJsonSerializerService;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
     private final PlatformSecurityContext context;
@@ -87,6 +90,7 @@ public class GuarantorsApiResource {
     private final LoanReadPlatformService loanReadPlatformService;
     private final BulkImportWorkbookService bulkImportWorkbookService;
     private final BulkImportWorkbookPopulatorService bulkImportWorkbookPopulatorService;
+    private final GuarantorKycReadPlatformService guarantorKycReadPlatformService;
 
     @GET
     @Path("template")
@@ -203,4 +207,5 @@ public class GuarantorsApiResource {
                 uploadedInputStream, fileDetail, locale, dateFormat);
         return this.apiJsonSerializerService.serialize(importDocumentId);
     }
+
 }

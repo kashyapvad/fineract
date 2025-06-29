@@ -64,6 +64,9 @@ public class ClientKycData implements Serializable {
     private Boolean drivingLicenseVerified;
     private Boolean passportVerified;
 
+    // OTP Verification Fields
+    private Boolean aadhaarOtpVerified;
+
     // Verification Metadata
     private KycVerificationMethod verificationMethod;
     private String verificationMethodCode;

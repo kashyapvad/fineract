@@ -95,6 +95,10 @@ public class Guarantor extends AbstractPersistableCustom<Long> {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    // KYC Integration: Link to guarantor KYC details for auto-population
+    @Column(name = "extend_guarantor_kyc_id")
+    private Long extendGuarantorKycId;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "guarantor", orphanRemoval = true, fetch = FetchType.EAGER)
     private List<GuarantorFundingDetails> guarantorFundDetails = new ArrayList<>();
 
@@ -106,7 +110,7 @@ public class Guarantor extends AbstractPersistableCustom<Long> {
             final String firstname, final String lastname, final LocalDate dateOfBirth, final String addressLine1,
             final String addressLine2, final String city, final String state, final String country, final String zip,
             final String housePhoneNumber, final String mobilePhoneNumber, final String comment, final boolean active,
-            final List<GuarantorFundingDetails> guarantorFundDetails) {
+            final List<GuarantorFundingDetails> guarantorFundDetails, final Long extendGuarantorKycId) {
         this.loan = loan;
         this.clientRelationshipType = clientRelationshipType;
         this.gurantorType = gurantorType;
@@ -124,6 +128,7 @@ public class Guarantor extends AbstractPersistableCustom<Long> {
         this.mobilePhoneNumber = StringUtils.defaultIfEmpty(mobilePhoneNumber, null);
         this.comment = StringUtils.defaultIfEmpty(comment, null);
         this.active = active;
+        this.extendGuarantorKycId = extendGuarantorKycId;
         this.guarantorFundDetails.addAll(guarantorFundDetails);
     }
 
@@ -131,8 +136,10 @@ public class Guarantor extends AbstractPersistableCustom<Long> {
             final List<GuarantorFundingDetails> fundingDetails) {
         final Integer gurantorType = command.integerValueSansLocaleOfParameterNamed(GuarantorJSONinputParams.GUARANTOR_TYPE_ID.getValue());
         final Long entityId = command.longValueOfParameterNamed(GuarantorJSONinputParams.ENTITY_ID.getValue());
+        final Long extendGuarantorKycId = command.longValueOfParameterNamed(GuarantorJSONinputParams.EXISTING_GUARANTOR_KYC_ID.getValue());
         final boolean active = true;
-        if (GuarantorType.EXTERNAL.getValue().equals(gurantorType)) {
+
+        if (GuarantorType.EXTERNAL.getValue().equals(gurantorType) || GuarantorType.GUARANTOR_KYC.getValue().equals(gurantorType)) {
             final String firstname = command.stringValueOfParameterNamed(GuarantorJSONinputParams.FIRSTNAME.getValue());
             final String lastname = command.stringValueOfParameterNamed(GuarantorJSONinputParams.LASTNAME.getValue());
             final LocalDate dateOfBirth = command.localDateValueOfParameterNamed(GuarantorJSONinputParams.DATE_OF_BIRTH.getValue());
@@ -146,12 +153,18 @@ public class Guarantor extends AbstractPersistableCustom<Long> {
             final String mobilePhoneNumber = command.stringValueOfParameterNamed(GuarantorJSONinputParams.MOBILE_NUMBER.getValue());
             final String comment = command.stringValueOfParameterNamed(GuarantorJSONinputParams.COMMENT.getValue());
 
-            return new Guarantor(loan, clientRelationshipType, gurantorType, entityId, firstname, lastname, dateOfBirth, addressLine1,
-                    addressLine2, city, state, country, zip, housePhoneNumber, mobilePhoneNumber, comment, active, fundingDetails);
+            // For GUARANTOR_KYC: store personal details AND the extendGuarantorKycId link, entityId = null
+            // For EXTERNAL: store personal details, both extendGuarantorKycId and entityId = null
+            final Long guarantorKycId = GuarantorType.GUARANTOR_KYC.getValue().equals(gurantorType) ? extendGuarantorKycId : null;
+
+            return new Guarantor(loan, clientRelationshipType, gurantorType, null, firstname, lastname, dateOfBirth, addressLine1,
+                    addressLine2, city, state, country, zip, housePhoneNumber, mobilePhoneNumber, comment, active, fundingDetails,
+                    guarantorKycId);
         }
 
+        // For CUSTOMER and STAFF types: only store link, no personal details
         return new Guarantor(loan, clientRelationshipType, gurantorType, entityId, null, null, null, null, null, null, null, null, null,
-                null, null, null, active, fundingDetails);
+                null, null, null, active, fundingDetails, null);
 
     }
 
@@ -161,7 +174,7 @@ public class Guarantor extends AbstractPersistableCustom<Long> {
 
         handlePropertyUpdate(command, actualChanges, GuarantorJSONinputParams.CLIENT_RELATIONSHIP_TYPE_ID.getValue(), 0, true);
 
-        if (isExternalGuarantor()) {
+        if (isExternalGuarantor() || isExistingGuarantorKyc()) {
             handlePropertyUpdate(command, actualChanges, GuarantorJSONinputParams.FIRSTNAME.getValue(), this.firstname);
             handlePropertyUpdate(command, actualChanges, GuarantorJSONinputParams.LASTNAME.getValue(), this.lastname);
             handlePropertyUpdate(command, actualChanges, GuarantorJSONinputParams.DATE_OF_BIRTH.getValue(), this.dateOfBirth);
@@ -190,6 +203,10 @@ public class Guarantor extends AbstractPersistableCustom<Long> {
 
     public boolean isExternalGuarantor() {
         return GuarantorType.EXTERNAL.getValue().equals(this.gurantorType);
+    }
+
+    public boolean isExistingGuarantorKyc() {
+        return GuarantorType.GUARANTOR_KYC.getValue().equals(this.gurantorType);
     }
 
     private void handlePropertyUpdate(final JsonCommand command, final Map<String, Object> actualChanges, final String paramName,
@@ -261,6 +278,10 @@ public class Guarantor extends AbstractPersistableCustom<Long> {
 
     public Long getEntityId() {
         return this.entityId;
+    }
+
+    public Long getExtendGuarantorKycId() {
+        return this.extendGuarantorKycId;
     }
 
     public Long getLoanId() {

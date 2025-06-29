@@ -30,6 +30,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -40,6 +41,7 @@ import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.extend.converter.PostgresJsonbConverter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.useradministration.domain.AppUser;
 
@@ -114,6 +116,19 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
 
     @Column(name = "verification_notes", columnDefinition = "TEXT")
     private String verificationNotes;
+
+    // OTP Verification Fields
+    @Column(name = "aadhaar_otp_verified", nullable = false)
+    private Boolean aadhaarOtpVerified = false;
+
+    @Column(name = "otp_client_id", length = 100)
+    private String otpClientId;
+
+    @Column(name = "otp_last_requested_on")
+    private LocalDateTime otpLastRequestedOn;
+
+    @Column(name = "otp_verified_on")
+    private LocalDateTime otpVerifiedOn;
 
     /**
      * Creates a new ClientKycDetails instance for the given client.
@@ -365,5 +380,42 @@ public class ClientKycDetails extends AbstractAuditableWithUTCDateTimeCustom<Lon
      */
     public boolean isManuallyVerified() {
         return KycVerificationMethod.MANUAL.equals(this.verificationMethod);
+    }
+
+    /**
+     * Checks if this KYC record was verified through OTP.
+     *
+     * @return true if verification method is OTP
+     */
+    public boolean isOtpVerified() {
+        return KycVerificationMethod.OTP.equals(this.verificationMethod);
+    }
+
+    /**
+     * Marks OTP generation for Aadhaar verification.
+     *
+     * @param otpClientId
+     *            the client ID from OTP provider
+     */
+    public void markOtpGenerated(String otpClientId) {
+        this.otpClientId = otpClientId;
+        this.otpLastRequestedOn = DateUtils.getLocalDateTimeOfTenant();
+    }
+
+    /**
+     * Marks OTP verification as completed for Aadhaar.
+     *
+     * @param verifiedByUser
+     *            the user who completed the verification
+     * @param notes
+     *            optional verification notes
+     */
+    public void markOtpVerificationCompleted(AppUser verifiedByUser, String notes) {
+        this.verificationMethod = KycVerificationMethod.OTP;
+        this.aadhaarOtpVerified = true;
+        this.otpVerifiedOn = DateUtils.getLocalDateTimeOfTenant();
+        this.verifiedByUser = verifiedByUser;
+        this.lastVerifiedOn = LocalDate.now(ZoneId.systemDefault());
+        this.verificationNotes = notes;
     }
 }

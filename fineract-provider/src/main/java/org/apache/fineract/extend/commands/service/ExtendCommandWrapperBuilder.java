@@ -246,6 +246,60 @@ public final class ExtendCommandWrapperBuilder {
     }
 
     /**
+     * Creates CommandWrapper for generating OTP for client KYC Aadhaar verification.
+     */
+    public static CommandWrapper generateOtpClientKyc(final Long clientId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "GENERATE_OTP", // actionName
+                "CLIENT_KYC", // entityName
+                null, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/kyc/verify/otp/generate", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for submitting OTP for client KYC Aadhaar verification.
+     */
+    public static CommandWrapper submitOtpClientKyc(final Long clientId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "VERIFY_OTP", // actionName
+                "CLIENT_KYC", // entityName
+                null, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/kyc/verify/otp/submit", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
      * Creates CommandWrapper for creating client credit bureau reports manually.
      */
     public static CommandWrapper createClientCreditBureauReport(final Long clientId, final String json) {
@@ -449,6 +503,222 @@ public final class ExtendCommandWrapperBuilder {
                 null, // subentityId
                 "/clients/" + clientId + "/extend/kfs/" + kfsId, // href
                 "{}", // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for creating guarantor KYC details.
+     */
+    public static CommandWrapper createGuarantorKyc(final Long clientId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "CREATE", // actionName
+                "GUARANTOR_KYC", // entityName
+                null, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/guarantor-kyc", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for updating guarantor KYC details.
+     */
+    public static CommandWrapper updateGuarantorKyc(final Long clientId, final Long guarantorKycId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "UPDATE", // actionName
+                "GUARANTOR_KYC", // entityName
+                guarantorKycId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/guarantor-kyc/" + guarantorKycId, // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for deleting guarantor KYC details.
+     */
+    public static CommandWrapper deleteGuarantorKyc(final Long clientId, final Long guarantorKycId) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "DELETE", // actionName
+                "GUARANTOR_KYC", // entityName
+                guarantorKycId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/guarantor-kyc/" + guarantorKycId, // href
+                "{}", // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for generating OTP for guarantor KYC verification.
+     */
+    public static CommandWrapper generateOtpGuarantorKyc(final Long clientId, final Long guarantorKycId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "GENERATE_OTP", // actionName
+                "GUARANTOR_KYC", // entityName
+                guarantorKycId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/guarantor-kyc/" + guarantorKycId + "/verify/otp/generate", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for submitting OTP for guarantor KYC verification.
+     */
+    public static CommandWrapper submitOtpGuarantorKyc(final Long clientId, final Long guarantorKycId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "VERIFY_OTP", // actionName
+                "GUARANTOR_KYC", // entityName
+                guarantorKycId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/guarantor-kyc/" + guarantorKycId + "/verify/otp/submit", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for manual verification of guarantor KYC.
+     */
+    public static CommandWrapper verifyGuarantorKycManually(final Long clientId, final Long guarantorKycId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "VERIFY_MANUAL", // actionName
+                "GUARANTOR_KYC", // entityName
+                guarantorKycId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/guarantor-kyc/" + guarantorKycId + "/verify/manual", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for API verification of guarantor KYC.
+     */
+    public static CommandWrapper verifyGuarantorKycViaApi(final Long clientId, final Long guarantorKycId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "VERIFY_API", // actionName
+                "GUARANTOR_KYC", // entityName
+                guarantorKycId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/guarantor-kyc/" + guarantorKycId + "/verify/api", // href
+                json, // json
+                null, // transactionId
+                null, // productId
+                null, // templateId
+                null, // creditBureauId
+                null, // organisationCreditBureauId
+                null, // jobName
+                null, // idempotencyKey
+                null, // loanExternalId
+                null // sanitizeJsonKeys
+        );
+    }
+
+    /**
+     * Creates CommandWrapper for manual unverification of guarantor KYC.
+     */
+    public static CommandWrapper unverifyGuarantorKycManually(final Long clientId, final Long guarantorKycId, final String json) {
+        return new CommandWrapper(null, // officeId
+                null, // groupId
+                clientId, // clientId
+                null, // loanId
+                null, // savingsId
+                "UNVERIFY_MANUAL", // actionName
+                "GUARANTOR_KYC", // entityName
+                guarantorKycId, // entityId
+                null, // subentityId
+                "/clients/" + clientId + "/extend/guarantor-kyc/" + guarantorKycId + "/unverify", // href
+                json, // json
                 null, // transactionId
                 null, // productId
                 null, // templateId

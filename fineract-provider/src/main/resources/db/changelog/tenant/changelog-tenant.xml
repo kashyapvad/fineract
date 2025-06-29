@@ -212,4 +212,7 @@
     <include file="parts/9003_create_extend_eir_calculation_table.xml" relativeToChangelogFile="true" />
     <include file="parts/9004_create_extend_kfs_template_table.xml" relativeToChangelogFile="true" />
     <include file="parts/9005_create_extend_kfs_document_table.xml" relativeToChangelogFile="true" />
+    <include file="parts/9006_add_otp_verification_to_client_kyc.xml" relativeToChangelogFile="true" />
+    <include file="parts/9007_create_extend_guarantor_kyc_tables.xml" relativeToChangelogFile="true" />
+    <include file="parts/9008_add_guarantor_kyc_link_to_guarantor.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

@@ -55,11 +55,12 @@ public class GuarantorCommand {
     private final LocalDate dob;
     private final Long savingsId;
     private final BigDecimal amount;
+    private final Long existingGuarantorKycId;
 
     public GuarantorCommand(final Long clientRelationshipTypeId, final Integer guarantorTypeId, final Long entityId, final String firstname,
             final String lastname, final String addressLine1, final String addressLine2, final String city, final String state,
             final String zip, final String country, final String mobileNumber, final String housePhoneNumber, final String comment,
-            final LocalDate dob, final Long savingsId, final BigDecimal amount) {
+            final LocalDate dob, final Long savingsId, final BigDecimal amount, final Long existingGuarantorKycId) {
 
         this.clientRelationshipTypeId = clientRelationshipTypeId;
 
@@ -82,10 +83,15 @@ public class GuarantorCommand {
         this.dob = dob;
         this.savingsId = savingsId;
         this.amount = amount;
+        this.existingGuarantorKycId = existingGuarantorKycId;
     }
 
     public boolean isExternalGuarantor() {
         return GuarantorType.EXTERNAL.getValue().equals(this.guarantorTypeId);
+    }
+
+    public boolean isGuarantorKycType() {
+        return GuarantorType.GUARANTOR_KYC.getValue().equals(this.guarantorTypeId);
     }
 
     public LocalDate getDobAsDate() {
@@ -105,7 +111,7 @@ public class GuarantorCommand {
                 .inMinMaxRange(GuarantorType.getMinValue(), GuarantorType.getMaxValue());
 
         // validate for existing Client or Staff serving as gurantor
-        if (!isExternalGuarantor()) {
+        if (!isExternalGuarantor() && !isGuarantorKycType()) {
             baseDataValidator.reset().parameter(GuarantorJSONinputParams.ENTITY_ID.getValue()).value(this.entityId).notNull()
                     .integerGreaterThanZero();
             baseDataValidator.reset().parameter(GuarantorJSONinputParams.SAVINGS_ID.getValue()).value(this.savingsId).longGreaterThanZero();
@@ -140,7 +146,7 @@ public class GuarantorCommand {
                 .ignoreIfNull().inMinMaxRange(GuarantorType.getMinValue(), GuarantorType.getMaxValue());
 
         // validate for existing Client or Staff serving as gurantor
-        if (!isExternalGuarantor()) {
+        if (!isExternalGuarantor() && !isGuarantorKycType()) {
             baseDataValidator.reset().parameter(GuarantorJSONinputParams.ENTITY_ID.getValue()).value(this.entityId).ignoreIfNull()
                     .integerGreaterThanZero();
             baseDataValidator.reset().parameter(GuarantorJSONinputParams.SAVINGS_ID.getValue()).value(this.savingsId).longGreaterThanZero();
@@ -222,5 +228,9 @@ public class GuarantorCommand {
 
     public BigDecimal getAmount() {
         return this.amount;
+    }
+
+    public Long getExistingGuarantorKycId() {
+        return this.existingGuarantorKycId;
     }
 }

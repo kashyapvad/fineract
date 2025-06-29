@@ -265,5 +265,52 @@ public class ClientKycApiResource {
         return this.commandResultToApiJsonSerializer.serialize(result);
     }
 
+    @POST
+    @Path("verify/otp/generate")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Generate OTP for Aadhaar Verification", description = "Generate OTP for client Aadhaar verification.\n\n"
+            + "This endpoint initiates OTP generation for Aadhaar verification by sending OTP to the "
+            + "mobile number registered with Aadhaar. The OTP can then be used to verify Aadhaar documents.\n\n"
+            + "Note: KYC details must already exist with Aadhaar number before OTP can be generated.\n\n"
+            + "Required Fields: aadhaarNumber (or will use existing from KYC data)\n\n" + "Example Requests:\n\n"
+            + "clients/1/extend/kyc/verify/otp/generate\n\n" + "{\n" + "  \"aadhaarNumber\": \"123456789012\"\n" + "}")
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = Object.class)))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CommandProcessingResult.class))) })
+    public String generateOtpForAadhaarVerification(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = ExtendCommandWrapperBuilder.generateOtpClientKyc(clientId, apiRequestBodyAsJson);
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.commandResultToApiJsonSerializer.serialize(result);
+    }
+
+    @POST
+    @Path("verify/otp/submit")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Submit OTP for Aadhaar Verification", description = "Submit OTP for client Aadhaar verification.\n\n"
+            + "This endpoint verifies the OTP received via SMS for Aadhaar verification. Once verified, "
+            + "the Aadhaar document is marked as verified with OTP verification method.\n\n"
+            + "Note: OTP must be generated first using the generate endpoint before submission.\n\n"
+            + "Required Fields: otp (6-digit OTP received via SMS)\n\n" + "Optional Fields: notes\n\n" + "Example Requests:\n\n"
+            + "clients/1/extend/kyc/verify/otp/submit\n\n" + "{\n" + "  \"otp\": \"123456\",\n"
+            + "  \"notes\": \"OTP verification completed\"\n" + "}")
+    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = Object.class)))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CommandProcessingResult.class))) })
+    public String submitOtpForAadhaarVerification(@PathParam("clientId") @Parameter(description = "clientId") final Long clientId,
+            @Parameter(hidden = true) final String apiRequestBodyAsJson) {
+
+        final CommandWrapper commandRequest = ExtendCommandWrapperBuilder.submitOtpClientKyc(clientId, apiRequestBodyAsJson);
+
+        final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+
+        return this.commandResultToApiJsonSerializer.serialize(result);
+    }
+
     // parseClientIds method moved to ClientKycBulkApiResource to avoid duplication
 }

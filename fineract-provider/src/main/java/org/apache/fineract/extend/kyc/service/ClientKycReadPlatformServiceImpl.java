@@ -225,6 +225,9 @@ public class ClientKycReadPlatformServiceImpl implements ClientKycReadPlatformSe
             data.setPassportVerified(entity.getPassportVerified() != null ? entity.getPassportVerified() : false);
             data.setDrivingLicenseVerified(entity.getDrivingLicenseVerified() != null ? entity.getDrivingLicenseVerified() : false);
 
+            // OTP Verification Fields - ensure the aadhaarOtpVerified field is included in API response
+            data.setAadhaarOtpVerified(entity.getAadhaarOtpVerified() != null ? entity.getAadhaarOtpVerified() : false);
+
             // Verification Metadata
             data.setVerificationMethod(entity.getVerificationMethod());
             data.setVerificationMethodCode(entity.getVerificationMethod() != null ? entity.getVerificationMethod().getCode() : null);

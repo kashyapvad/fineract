@@ -51,7 +51,8 @@ public final class GuarantorConstants {
         COMMENT("comment"), //
         DATE_OF_BIRTH("dob"), //
         AMOUNT("amount"), //
-        SAVINGS_ID("savingsId"); //
+        SAVINGS_ID("savingsId"), //
+        EXISTING_GUARANTOR_KYC_ID("existingGuarantorKycId"); //
 
         private final String value;
 

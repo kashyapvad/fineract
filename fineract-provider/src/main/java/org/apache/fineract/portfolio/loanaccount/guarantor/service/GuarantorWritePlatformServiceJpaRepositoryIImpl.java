@@ -230,13 +230,20 @@ public class GuarantorWritePlatformServiceJpaRepositoryIImpl implements Guaranto
                 for (final Guarantor guarantor : existGuarantorList) {
                     if (guarantor.getEntityId().equals(entityId) && guarantor.getGurantorType().equals(guarantorTypeId)
                             && !guarantorForUpdate.getId().equals(guarantor.getId())) {
-                        String defaultUserMessage = this.clientRepositoryWrapper.findOneWithNotFoundDetection(entityId).getDisplayName();
+                        String defaultUserMessage;
+                        if (guarantorType.isCustomer()) {
+                            defaultUserMessage = this.clientRepositoryWrapper.findOneWithNotFoundDetection(entityId).getDisplayName();
+                        } else {
+                            defaultUserMessage = "Entity ID " + entityId; // Generic message for staff
+                        }
                         defaultUserMessage = defaultUserMessage + " is already exist as a guarantor for this loan";
                         final String action = loan.client() != null ? "client.guarantor" : "group.guarantor";
                         throw new DuplicateGuarantorException(action, "is.already.exist.same.loan", defaultUserMessage, entityId, loanId);
                     }
                 }
             }
+            // Note: GUARANTOR_KYC type duplicate check is not needed since it has null entityId and uses
+            // extendGuarantorKycId
 
             if (changesOnly.containsKey(GuarantorJSONinputParams.ENTITY_ID.getValue())
                     || changesOnly.containsKey(GuarantorJSONinputParams.GUARANTOR_TYPE_ID.getValue())) {
@@ -336,6 +343,11 @@ public class GuarantorWritePlatformServiceJpaRepositoryIImpl implements Guaranto
 
         } else if (guarantor.isExistingEmployee()) {
             this.staffRepositoryWrapper.findOneWithNotFoundDetection(guarantor.getEntityId());
+        } else if (guarantor.isExistingGuarantorKyc()) {
+            // For guarantor KYC type, entityId is null and extendGuarantorKycId should be used
+            if (guarantor.getExtendGuarantorKycId() == null) {
+                throw new InvalidGuarantorException(guarantor.getId(), guarantor.getLoanId(), "guarantor.kyc.id.required");
+            }
         }
     }
 

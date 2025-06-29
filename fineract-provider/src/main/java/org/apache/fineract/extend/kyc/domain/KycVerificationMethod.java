@@ -36,7 +36,13 @@ public enum KycVerificationMethod {
      * Verification performed manually by a staff member or authorized user. This involves human verification of
      * documents and details.
      */
-    MANUAL("MANUAL", "Verified manually");
+    MANUAL("MANUAL", "Verified manually"),
+
+    /**
+     * Verification performed through OTP-based verification for Aadhaar documents. This involves sending OTP to Aadhaar
+     * registered mobile number and verifying the OTP.
+     */
+    OTP("OTP", "Verified through OTP");
 
     private final String code;
     private final String description;
@@ -94,6 +100,15 @@ public enum KycVerificationMethod {
      */
     public boolean isApiVerification() {
         return this == API;
+    }
+
+    /**
+     * Checks if the verification method is OTP-based.
+     *
+     * @return true if verification method is OTP
+     */
+    public boolean isOtpVerification() {
+        return this == OTP;
     }
 
     /**

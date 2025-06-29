@@ -276,6 +276,7 @@ public class LoansApiResource {
     private final GroupReadPlatformService groupReadPlatformService;
     private final DefaultToApiJsonSerializer<LoanAccountData> toApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanApprovalData> loanApprovalDataToApiJsonSerializer;
+    private final org.apache.fineract.portfolio.loanaccount.guarantor.serialization.GuarantorJsonPostProcessor guarantorJsonPostProcessor;
     private final DefaultToApiJsonSerializer<LoanScheduleData> loanScheduleToApiJsonSerializer;
     private final DefaultToApiJsonSerializer<LoanDelinquencyActionData> delinquencyActionSerializer;
     private final ApiRequestParameterHelper apiRequestParameterHelper;
@@ -1179,7 +1180,16 @@ public class LoansApiResource {
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
                 mandatoryResponseParameters);
-        return this.toApiJsonSerializer.serialize(settings, loanAccount, LOAN_DATA_PARAMETERS);
+
+        // Serialize loan data
+        String jsonResponse = this.toApiJsonSerializer.serialize(settings, loanAccount, LOAN_DATA_PARAMETERS);
+
+        // Fix guarantors if present
+        if (loanAccount.getGuarantors() != null && !loanAccount.getGuarantors().isEmpty()) {
+            jsonResponse = this.guarantorJsonPostProcessor.fixGuarantorsInJson(jsonResponse, loanAccount);
+        }
+
+        return jsonResponse;
     }
 
     private String modifyLoanApplication(final Long loanId, final String loanExternalIdStr, final String commandParam,

@@ -82,4 +82,22 @@ public interface ClientKycWritePlatformService {
      * @return CommandProcessingResult with operation status
      */
     CommandProcessingResult deleteKycDetails(JsonCommand command);
+
+    /**
+     * Generate OTP for Aadhaar verification.
+     *
+     * @param command
+     *            JSON command containing client ID and Aadhaar number
+     * @return CommandProcessingResult with OTP generation status
+     */
+    CommandProcessingResult generateOtpForAadhaarVerification(JsonCommand command);
+
+    /**
+     * Submit OTP for Aadhaar verification.
+     *
+     * @param command
+     *            JSON command containing client ID and OTP
+     * @return CommandProcessingResult with verification status
+     */
+    CommandProcessingResult submitOtpForAadhaarVerification(JsonCommand command);
 }

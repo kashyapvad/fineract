@@ -59,4 +59,7 @@ public class GuarantorsRequest implements Serializable {
     private Long savingsId;
     private BigDecimal amount;
 
+    /*** Field for existing guarantor KYC reference ***/
+    private Long existingGuarantorKycId;
+
 }

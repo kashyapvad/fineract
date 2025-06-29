@@ -162,6 +162,15 @@ public class GuarantorData implements IGuarantor {
                 guarantorData.allowedClientRelationshipTypes, guarantorData.accountLinkingOptions);
     }
 
+    public static GuarantorData mergeGuarantorKycData(final org.apache.fineract.extend.kyc.data.GuarantorKycData guarantorKycData,
+            final GuarantorData guarantorData) {
+        return new GuarantorData(guarantorData.id, guarantorData.loanId, guarantorData.clientRelationshipType, guarantorData.entityId,
+                guarantorData.guarantorType, guarantorKycData.getFullName(), null, null, null, null, null, null, null, null,
+                guarantorKycData.getMobileNumber(), null, null, null, null, null, guarantorData.status,
+                guarantorData.guarantorFundingDetails, null, guarantorData.allowedClientRelationshipTypes,
+                guarantorData.accountLinkingOptions);
+    }
+
     public GuarantorData(final Long id, final Long loanId, final CodeValueData clientRelationshipType, final Long entityId,
             final EnumOptionData guarantorType, final String firstname, final String lastname, final LocalDate dob,
             final String addressLine1, final String addressLine2, final String city, final String state, final String zip,
@@ -206,5 +215,9 @@ public class GuarantorData implements IGuarantor {
 
     public boolean isStaffMember() {
         return GuarantorType.STAFF.getValue().equals(this.guarantorType.getId().intValue());
+    }
+
+    public boolean isExistingGuarantorKyc() {
+        return GuarantorType.GUARANTOR_KYC.getValue().equals(this.guarantorType.getId().intValue());
     }
 }
